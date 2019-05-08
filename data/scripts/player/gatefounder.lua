@@ -77,12 +77,10 @@ function GateFounder.initialize()
         Azimuth.saveConfig("GateFounder", config, configOptions)
     end
     Log = Azimuth.logs("GateFounder", config.LogLevel)
-    --
-    Player():registerCallback("onSectorEntered", "onSectorEntered")
 end
 
 function GateFounder.found(tx, ty, confirm)
-    local buyer, _, player = getInteractingFaction(Player().index, AlliancePrivilege.SpendResources)
+    local buyer, _, player = getInteractingFaction(Player().index, AlliancePrivilege.FoundStations)
     if not buyer then return end
     if buyer.isPlayer and config.AlliancesOnly then
         player:sendChatMessage("", 1, "Only alliances can found gates!"%_t)
@@ -144,36 +142,18 @@ function GateFounder.found(tx, ty, confirm)
         buyer:setValue("gates_founded", gateCount + 1)
         gates[#gates+1] = createGates(buyer, x, y, tx, ty)
         Placer.resolveIntersections(gates)
-        -- save data so the gate back will be spawned once someone will enter that sector
-        local gatesInfo = Server():getValue("gate_founder_"..tx.."_"..ty)
-        if gatesInfo then
-            gatesInfo = gatesInfo..";"..buyer.index..","..x..","..y
-        else
-            gatesInfo = buyer.index..","..x..","..y
-        end
-        Server():setValue("gate_founder_"..tx.."_"..ty, gatesInfo)
-        player:sendChatMessage("Server"%_t, 0, "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."%_t, x, y, tx, ty)
-    end
-end
-
-function GateFounder.onSectorEntered(_, x, y)
-    local gatesInfo = Server():getValue("gate_founder_"..x.."_"..y)
-    if gatesInfo then
-        Server():setValue("gate_founder_"..x.."_"..y) -- remove
-        local gates = gatesInfo:split(";")
-        if gates then
-            local gateEntities = {Sector():getEntitiesByScript("data/scripts/entity/gate.lua")}
-            local gate, fIndex, tx, ty
-            for i = 1, #gates do
-                gate = gates[i]:split(",")
-                -- spawn gates
-                fIndex = tonumber(gate[1])
-                tx = tonumber(gate[2])
-                ty = tonumber(gate[3])
-                Log.Debug("Spawning back gates for faction %i from (%i:%i) to (%i:%i)", fIndex, x, y, tx, ty)
-                gateEntities[#gateEntities+1] = createGates(Faction(fIndex), x, y, tx, ty)
+        -- try to spawn the gate back if target sector is loaded
+        if Galaxy():sectorLoaded(tx, ty) then
+            invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "data/scripts/sector/gatefounder.lua", "foundGate", buyer.index, x, y)
+        else -- save data so the gate back will be spawned once someone will enter that sector
+            local gatesInfo = Server():getValue("gate_founder_"..tx.."_"..ty)
+            if gatesInfo then
+                gatesInfo = gatesInfo..";"..buyer.index..","..x..","..y
+            else
+                gatesInfo = buyer.index..","..x..","..y
             end
-            Placer.resolveIntersections(gateEntities)
+            Server():setValue("gate_founder_"..tx.."_"..ty, gatesInfo)
         end
+        player:sendChatMessage("Server"%_t, 0, "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."%_t, x, y, tx, ty)
     end
 end

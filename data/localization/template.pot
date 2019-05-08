@@ -31,4 +31,10 @@ msgstr ""
 msgid "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."
 msgstr ""
 
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "'%s' - paid %i credits gate passage fee."
+msgstr ""
 
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "Toggle"
+msgstr ""

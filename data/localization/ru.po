@@ -31,4 +31,10 @@ msgstr "Создание врат из \\s(%i:%i) в \\s(%i:%i) будет ст�
 msgid "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."
 msgstr "Врата из \\s(%i:%i) в \\s(%i:%i) были успешно созданы."
 
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "'%s' - paid %i credits gate passage fee."
+msgstr "'%s' - заплачено %i кредитов за проход через врата."
 
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "Toggle"
+msgstr "Переключить"
