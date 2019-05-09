@@ -42,6 +42,24 @@ function GateFounder.initialize()
         Placer.resolveIntersections(gateEntities)
     end
     
+    -- claim gates
+    gatesInfo = server:getValue("gate_claim".._x_y)
+    if gatesInfo then
+        server:setValue("gate_claim".._x_y)
+        local gates = gatesInfo:split(";")
+        local gate, factionIndex, tx, ty
+        if gates then
+            for i = 1, #gates do
+                gate = gates[i]:split(",")
+                factionIndex = tonumber(gate[1])
+                tx = tonumber(gate[2])
+                ty = tonumber(gate[3])
+                Log.Debug("GetValue - claim a gate from (%i:%i) to (%i:%i) to faction %i", x, y, tx, ty, factionIndex)
+                GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
+            end
+        end
+    end
+    
     -- remove gates
     gatesInfo = server:getValue("gate_destroyer".._x_y)
     if gatesInfo then
@@ -160,28 +178,28 @@ end
 
 function GateFounder.destroyGate(factionIndex, tx, ty, gateEntities)
     Log.Debug("Remove a gate of faction %i from (%i:%i) to (%i:%i)", factionIndex, x, y, tx, ty)
-    local faction = Faction(factionIndex)
-    if not faction then return end
+    --local faction = Faction(factionIndex)
+    --if not faction then return end
     if not gateEntities then
         gateEntities = {sector:getEntitiesByScript("data/scripts/entity/gate.lua")}
     end
     local wx, wy
     for k, gate in pairs(gateEntities) do
-        if gate.factionIndex == factionIndex then
+        --if gate.factionIndex == factionIndex then
             wx, wy = gate:getWormholeComponent():getTargetCoordinates()
             if wx == tx and wy == ty then
                 Log.Debug("Gate found and removed")
                 sector:deleteEntity(gate)
                 return k
             end
-        end
+        --end
     end
 end
 
 function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
     Log.Debug("Toggle a gate of faction %i from (%i:%i) to (%i:%i) - %s", factionIndex, x, y, tx, ty, tostring(enable))
-    local faction = Faction(factionIndex)
-    if not faction then return end
+    --local faction = Faction(factionIndex)
+    --if not faction then return end
     local isRemote = true
     if not gateEntities then
         isRemote = false
@@ -189,7 +207,7 @@ function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
     end
     local wh, wx, wy
     for _, gate in pairs(gateEntities) do
-        if gate.factionIndex == factionIndex then
+        --if gate.factionIndex == factionIndex then
             wh = gate:getWormholeComponent()
             wx, wy = wh:getTargetCoordinates()
             if wx == tx and wy == ty then
@@ -198,7 +216,7 @@ function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
                 gate:invokeFunction("data/scripts/entity/gate.lua", "updateTooltip", nil, true) -- Integration: Compass-like Gate Pixel Icons
                 return
             end
-        end
+        --end
     end
     if isRemote then
         Log.Debug("Failed to toggle a gate. Saving this instruction for later")
@@ -211,5 +229,25 @@ function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
         Server():setValue("gate_toggler_"..x.."_"..y, gatesInfo)
     else
         Log.Debug("Failed to toggle a gate a second time. Oh well")
+    end
+end
+
+function GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
+    Log.Debug("Claim a gate from (%i:%i) to (%i:%i) to faction %i", x, y, tx, ty, factionIndex)
+    local faction = Faction(factionIndex)
+    if not faction then
+        Log.Debug("Tried to claim a gate, but faction doesn't exist anymore")
+        return
+    end
+    if not gateEntities then
+        gateEntities = {sector:getEntitiesByScript("data/scripts/entity/gate.lua")}
+    end
+    local wx, wy
+    for k, gate in pairs(gateEntities) do
+        wx, wy = gate:getWormholeComponent():getTargetCoordinates()
+        if wx == tx and wy == ty then
+            Log.Debug("Gate found and claimed")
+            gate.factionIndex = factionIndex
+        end
     end
 end
