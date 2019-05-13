@@ -38,3 +38,15 @@ msgstr "'%s' - заплачено %i кредитов за проход чере
 #: mods\Gate Founder\data\scripts\player\gatefounder.lua:
 msgid "Toggle"
 msgstr "Переключить"
+
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "Gates can't cross barrier!"
+msgstr "Врата не могут пересекать барьер!"
+
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "Gates that cross barrier need to be built from the inner ring!"
+msgstr "Врата, пересекающие барьер, могут быть построены только из внутреннего кольца!"
+
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "Gates can't lead into rifts!"
+msgstr "Врата не могут вести в разломы!"

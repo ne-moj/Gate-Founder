@@ -38,3 +38,15 @@ msgstr ""
 #: mods\Gate Founder\data\scripts\player\gatefounder.lua:
 msgid "Toggle"
 msgstr ""
+
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "Gates can't cross barrier!"
+msgstr ""
+
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "Gates that cross barrier need to be built from the inner ring!"
+msgstr ""
+
+#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+msgid "Gates can't lead into rifts!"
+msgstr ""

@@ -3,6 +3,7 @@ package.path = package.path .. ";data/scripts/lib/?.lua"
 include("faction")
 include("galaxy")
 include("stringutility")
+local PassageMap = include("passagemap")
 local Placer = include("placer")
 local PlanGenerator = include("plangenerator")
 local Azimuth = include("azimuthlib-basic")
@@ -69,7 +70,8 @@ function GateFounder.initialize()
       MaxGatesPerFaction = { default = 5, min = 0, format = "floor", comment = "How many gates can each faction found." },
       AlliancesOnly = { default = false, comment = "If true, only alliances wiil be able to found gates." },
       SubsequentGatePriceMultiplier = { default = 1.1, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
-      SubsequentGatePricePower = { default = 1.01, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." }
+      SubsequentGatePricePower = { default = 1.01, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
+      AllowToPassBarrier = { default = false, comment = "If true, players will be able to build gates through barrier." }
     }
     local isModified
     config, isModified = Azimuth.loadConfig("GateFounder", configOptions)
@@ -100,6 +102,20 @@ function GateFounder.found(tx, ty, confirm)
     if d > config.MaxDistance then
         player:sendChatMessage("", 1, "Distance between gates is too big!"%_t)
         return
+    end
+    passageMap = PassageMap(Server().seed)
+    if not passageMap:passable(tx, ty) then
+        player:sendChatMessage("", 1, "Gates can't lead into rifts!"%_t)
+        return
+    end
+    if passageMap:insideRing(x, y) ~= passageMap:insideRing(tx, ty) then
+        if not config.AllowToPassBarrier then
+            player:sendChatMessage("", 1, "Gates can't cross barrier!"%_t)
+            return
+        elseif not passageMap:insideRing(x, y) then
+            player:sendChatMessage("", 1, "Gates that cross barrier need to be built from the inner ring!"%_t)
+            return
+        end
     end
     if config.OwnedSectorsOnly then
         local owner = Galaxy():getControllingFaction(x, y)
