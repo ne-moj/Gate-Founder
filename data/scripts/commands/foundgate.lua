@@ -13,7 +13,7 @@ function execute(sender, commandName, x, y, confirm)
     if not x or not y then
         player:sendChatMessage("Server", 0, getHelp())
     else
-        player:invokeFunction("data/scripts/player/gatefounder.lua", "found", x, y, confirm)
+        player:invokeFunction("data/scripts/player/gatefounder.lua", "found", x, y, confirm, true)
     end
 
     return 0, "", ""

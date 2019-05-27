@@ -11,7 +11,31 @@ local Azimuth = include("azimuthlib-basic")
 -- namespace GateFounder
 GateFounder = {}
 
-local config, Log
+-- load config
+local configOptions = {
+  _version = { default = "1.1", comment = "Config version. Don't touch." },
+  LogLevel = { default = 2, min = 0, max = 4, format = "floor", comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug." },
+  OwnedSectorsOnly = { default = true, comment = "If true, faction can spawn the gate only if it owns sector." },
+  MaxDistance = { default = 15, min = 1, format = "floor", comment = "Max gate distance." },
+  BasePriceMultiplier = { default = 15000, min = 1, comment = "Affects basic gate price." },
+  MaxGatesPerFaction = { default = 5, min = 0, format = "floor", comment = "How many gates can each faction found." },
+  AlliancesOnly = { default = false, comment = "If true, only alliances wiil be able to found gates." },
+  SubsequentGatePriceMultiplier = { default = 1.1, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
+  SubsequentGatePricePower = { default = 1.01, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
+  AllowToPassBarrier = { default = false, comment = "If true, players will be able to build gates through barrier." },
+  UseStationFounderShip = { default = true, comment = "If true, in order to found gates you'll need to build station founder ship on any shipyard." }
+}
+local config, isModified = Azimuth.loadConfig("GateFounder", configOptions)
+if config._version == "1.0" then
+    config._version = "1.1"
+    config.UseStationFounderShip = false -- use old settings to avoid confusion
+    isModified = true
+end
+if isModified then
+    Azimuth.saveConfig("GateFounder", config, configOptions)
+end
+local Log = Azimuth.logs("GateFounder", config.LogLevel)
+
 
 local function createGates(faction, x, y, tx, ty)
     local desc = EntityDescriptor()
@@ -59,30 +83,13 @@ local function createGates(faction, x, y, tx, ty)
     return Sector():createEntity(desc)
 end
 
-function GateFounder.initialize()
-    -- load config
-    local configOptions = {
-      _version = { default = "1.0", comment = "Config version. Don't touch." },
-      LogLevel = { default = 2, min = 0, max = 4, format = "floor", comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug." },
-      OwnedSectorsOnly = { default = true, comment = "If true, faction can spawn the gate only if it owns sector." },
-      MaxDistance = { default = 15, min = 1, format = "floor", comment = "Max gate distance." },
-      BasePriceMultiplier = { default = 15000, min = 1, comment = "Affects basic gate price." },
-      MaxGatesPerFaction = { default = 5, min = 0, format = "floor", comment = "How many gates can each faction found." },
-      AlliancesOnly = { default = false, comment = "If true, only alliances wiil be able to found gates." },
-      SubsequentGatePriceMultiplier = { default = 1.1, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
-      SubsequentGatePricePower = { default = 1.01, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
-      AllowToPassBarrier = { default = false, comment = "If true, players will be able to build gates through barrier." }
-    }
-    local isModified
-    config, isModified = Azimuth.loadConfig("GateFounder", configOptions)
-    if isModified then
-        Azimuth.saveConfig("GateFounder", config, configOptions)
-    end
-    Log = Azimuth.logs("GateFounder", config.LogLevel)
-end
-
-function GateFounder.found(tx, ty, confirm)
+function GateFounder.found(tx, ty, confirm, isCommand)
+    local server = Server()
     local buyer, _, player = getInteractingFaction(Player().index, AlliancePrivilege.FoundStations)
+    if isCommand and config.UseStationFounderShip and not server:hasAdminPrivileges(player) then
+        player:sendChatMessage("", 1, "Build station founder ships on any shipyard in order to found gates!"%_t)
+        return
+    end
     if not buyer then return end
     if buyer.isPlayer and config.AlliancesOnly then
         player:sendChatMessage("", 1, "Only alliances can found gates!"%_t)
@@ -94,8 +101,8 @@ function GateFounder.found(tx, ty, confirm)
         return
     end
     local x, y = Sector():getCoordinates()
-    if x == tx and y == ty then
-        player:sendChatMessage("", 1, "You can't found a gate that leads in the same sector!"%_t)
+    if x == tx and y == ty then       
+        player:sendChatMessage("", 1, "Gates can't lead in the same sector!"%_t)
         return
     end
     local d = distance(vec2(x, y), vec2(tx, ty))
@@ -103,16 +110,17 @@ function GateFounder.found(tx, ty, confirm)
         player:sendChatMessage("", 1, "Distance between gates is too big!"%_t)
         return
     end
-    passageMap = PassageMap(Server().seed)
+    passageMap = PassageMap(server.seed)
     if not passageMap:passable(tx, ty) then
         player:sendChatMessage("", 1, "Gates can't lead into rifts!"%_t)
         return
     end
-    if passageMap:insideRing(x, y) ~= passageMap:insideRing(tx, ty) then
+    local xyInsideRing = passageMap:insideRing(x, y)
+    if xyInsideRing ~= passageMap:insideRing(tx, ty) then
         if not config.AllowToPassBarrier then
             player:sendChatMessage("", 1, "Gates can't cross barrier!"%_t)
             return
-        elseif not passageMap:insideRing(x, y) then
+        elseif not xyInsideRing then
             player:sendChatMessage("", 1, "Gates that cross barrier need to be built from the inner ring!"%_t)
             return
         end
@@ -162,14 +170,15 @@ function GateFounder.found(tx, ty, confirm)
         if Galaxy():sectorLoaded(tx, ty) then
             invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "data/scripts/sector/gatefounder.lua", "foundGate", buyer.index, x, y)
         else -- save data so the gate back will be spawned once someone will enter that sector
-            local gatesInfo = Server():getValue("gate_founder_"..tx.."_"..ty)
+            local gatesInfo = server:getValue("gate_founder_"..tx.."_"..ty)
             if gatesInfo then
                 gatesInfo = gatesInfo..";"..buyer.index..","..x..","..y
             else
                 gatesInfo = buyer.index..","..x..","..y
             end
-            Server():setValue("gate_founder_"..tx.."_"..ty, gatesInfo)
+            server:setValue("gate_founder_"..tx.."_"..ty, gatesInfo)
         end
         player:sendChatMessage("Server"%_t, 0, "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."%_t, x, y, tx, ty)
     end
+    return true
 end
