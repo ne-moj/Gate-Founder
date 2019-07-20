@@ -9,7 +9,7 @@ stations[#stations+1] = {
 if onClient() then
 
 local PassageMap = include("passagemap")
-include("uiproportionalsplitter")
+include("azimuthlib-uiproportionalsplitter")
 
 local gateFounder_config
 local gateFounder_window, gateFounder_xBox, gateFounder_yBox, gateFounder_coordsLabel, gateFounder_distanceLabel, gateFounder_maxDistanceLabel, gateFounder_priceLabel, gateFounder_foundGateBtn
@@ -71,7 +71,7 @@ function StationFounder.buildMiscStationGui(tab)
 
 
     local count = 0
-    for index, station in pairs(stations) do
+    for index, station in pairs(StationFounder.stations) do
 
         local stationName = station.name
 
@@ -111,7 +111,7 @@ function StationFounder.buildMiscStationGui(tab)
         label.size = vec2(vsplit.right.size.x, vsplit.right.size.y)
         label:setRightAligned()
 
-        stationsByButton[button.index] = index
+        StationFounder.stationsByButton[button.index] = index
 
         count = count + 1
     end
@@ -120,8 +120,8 @@ end
 
 local gateFounder_onFoundStationButtonPress = StationFounder.onFoundStationButtonPress
 function StationFounder.onFoundStationButtonPress(button)
-    local selectedStation = stationsByButton[button.index]
-    local template = stations[selectedStation]
+    local selectedStation = StationFounder.stationsByButton[button.index]
+    local template = StationFounder.stations[selectedStation]
 
     if not template.isGateFounder then
         gateFounder_onFoundStationButtonPress(button) -- continue vanilla behavior
