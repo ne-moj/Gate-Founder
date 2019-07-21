@@ -1,22 +1,35 @@
-stations[#stations+1] = {
+local PassageMap, Azimuth -- includes
+local gateFounder_window, gateFounder_xBox, gateFounder_yBox, gateFounder_coordsLabel, gateFounder_distanceLabel, gateFounder_maxDistanceLabel, gateFounder_priceLabel, gateFounder_foundGateBtn -- UI
+local gateFounder_x, gateFounder_y, gateFounder_passageMap -- client
+local gateFounder_configOptions -- server
+local GateFounderConfig -- client/server
+local gateFounder_initUI -- overriden functions
+local gateFounder_version = GameVersion() -- client/server
+local gateFounder_compat_stations, gateFounder_compat_stationsByButton -- compatibility
+
+if gateFounder_version.minor > 23 then -- Compatibility
+    gateFounder_compat_stations = StationFounder.stations
+    gateFounder_compat_stationsByButton = StationFounder.stationsByButton
+else
+    gateFounder_compat_stations = stations
+    gateFounder_compat_stationsByButton = stationsByButton
+end
+
+gateFounder_compat_stations[#gateFounder_compat_stations+1] = {
   isGateFounder = true,
   name = "Gate"%_t,
   tooltip = "Create a gate that will allow ships to travel to a paired gate in another sector. You pay only for the first gate in a pair. Second gate will be created automatically."%_t,
   price = 0
 }
 
-
 if onClient() then
 
-local PassageMap = include("passagemap")
+PassageMap = include("passagemap")
 include("azimuthlib-uiproportionalsplitter")
 
-local gateFounder_config
-local gateFounder_window, gateFounder_xBox, gateFounder_yBox, gateFounder_coordsLabel, gateFounder_distanceLabel, gateFounder_maxDistanceLabel, gateFounder_priceLabel, gateFounder_foundGateBtn
-local gateFounder_x, gateFounder_y
-local gateFounder_passageMap = PassageMap(Seed(GameSettings().seed))
+gateFounder_passageMap = PassageMap(Seed(GameSettings().seed))
 
-local gateFounder_initUI = StationFounder.initUI
+gateFounder_initUI = StationFounder.initUI
 function StationFounder.initUI()
     gateFounder_initUI()
 
@@ -69,9 +82,8 @@ function StationFounder.buildMiscStationGui(tab)
     frame.scrollSpeed = 40
     frame.paddingBottom = 17
 
-
     local count = 0
-    for index, station in pairs(StationFounder.stations) do
+    for index, station in pairs(gateFounder_compat_stations) do
 
         local stationName = station.name
 
@@ -111,17 +123,16 @@ function StationFounder.buildMiscStationGui(tab)
         label.size = vec2(vsplit.right.size.x, vsplit.right.size.y)
         label:setRightAligned()
 
-        StationFounder.stationsByButton[button.index] = index
+        gateFounder_compat_stationsByButton[button.index] = index
 
         count = count + 1
     end
-
 end
 
 local gateFounder_onFoundStationButtonPress = StationFounder.onFoundStationButtonPress
 function StationFounder.onFoundStationButtonPress(button)
-    local selectedStation = StationFounder.stationsByButton[button.index]
-    local template = StationFounder.stations[selectedStation]
+    local selectedStation = gateFounder_compat_stationsByButton[button.index]
+    local template = gateFounder_compat_stations[selectedStation]
 
     if not template.isGateFounder then
         gateFounder_onFoundStationButtonPress(button) -- continue vanilla behavior
@@ -132,7 +143,7 @@ function StationFounder.onFoundStationButtonPress(button)
 end
 
 function StationFounder.gateFounder_onCoordinatesChanged()
-    if gateFounder_config.gateCount < 0 then return end
+    if GateFounderConfig.gateCount < 0 then return end
 
     local tx = tonumber(gateFounder_xBox.text) or 0
     local ty = tonumber(gateFounder_yBox.text) or 0
@@ -148,7 +159,7 @@ function StationFounder.gateFounder_onCoordinatesChanged()
     if x == tx and y == ty then
         gateFounder_priceLabel.caption = "Gates can't lead in the same sector!"%_t
         isError = true
-    elseif d > gateFounder_config.MaxDistance then
+    elseif d > GateFounderConfig.MaxDistance then
         gateFounder_priceLabel.caption = "Distance between gates is too big!"%_t
         isError = true
     elseif not gateFounder_passageMap:passable(tx, ty) then
@@ -157,7 +168,7 @@ function StationFounder.gateFounder_onCoordinatesChanged()
     else
         local xyInsideRing = gateFounder_passageMap:insideRing(x, y)
         if xyInsideRing ~= gateFounder_passageMap:insideRing(tx, ty) then
-            if not gateFounder_config.AllowToPassBarrier then
+            if not GateFounderConfig.AllowToPassBarrier then
                 gateFounder_priceLabel.caption = "Gates can't cross barrier!"%_t
                 isError = true
             elseif not xyInsideRing then
@@ -182,9 +193,9 @@ function StationFounder.gateFounder_onCoordinatesChanged()
     end
     if not isError then
         local price = math.ceil(d * 30 * Balancing_GetSectorRichnessFactor((x + tx) / 2, (y + ty) / 2))
-        price = price * gateFounder_config.BasePriceMultiplier
-        price = price * math.pow(gateFounder_config.SubsequentGatePriceMultiplier, gateFounder_config.gateCount)
-        price = math.pow(price, math.pow(gateFounder_config.SubsequentGatePricePower, gateFounder_config.gateCount))
+        price = price * GateFounderConfig.BasePriceMultiplier
+        price = price * math.pow(GateFounderConfig.SubsequentGatePriceMultiplier, GateFounderConfig.gateCount)
+        price = math.pow(price, math.pow(GateFounderConfig.SubsequentGatePricePower, GateFounderConfig.gateCount))
         price = math.ceil(price)
         gateFounder_priceLabel.caption = createMonetaryString(price) .. " Cr"%_t
     end
@@ -202,7 +213,7 @@ end
 
 function StationFounder.gateFounder_receiveSettings(data, gateCount)
     data.gateCount = gateCount
-    gateFounder_config = data
+    GateFounderConfig = data
     gateFounder_maxDistanceLabel.caption = "Max distance: "%_t .. data.MaxDistance
     
     local isError = false
@@ -227,10 +238,10 @@ end
 else -- onServer
 
 
-local Azimuth = include("azimuthlib-basic")
+Azimuth = include("azimuthlib-basic")
 
 -- load config
-local gateFounder_configOptions = {
+gateFounder_configOptions = {
   OwnedSectorsOnly = { default = true, comment = "If true, faction can spawn the gate only if it owns sector." },
   MaxDistance = { default = 15, min = 1, format = "floor", comment = "Max gate distance." },
   BasePriceMultiplier = { default = 15000, min = 1, comment = "Affects basic gate price." },
@@ -240,24 +251,24 @@ local gateFounder_configOptions = {
   SubsequentGatePricePower = { default = 1.01, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
   AllowToPassBarrier = { default = false, comment = "If true, players will be able to build gates through barrier." }
 }
-local gateFounder_config = Azimuth.loadConfig("GateFounder", gateFounder_configOptions)
-gateFounder_config._version = nil
+GateFounderConfig = Azimuth.loadConfig("GateFounder", gateFounder_configOptions)
+GateFounderConfig._version = nil
 
 function StationFounder.gateFounder_sendSettings()
     local buyer, _, player, alliance = getInteractingFaction(callingPlayer)
     if alliance and not alliance:hasPrivilege(callingPlayer, AlliancePrivilege.FoundStations) then
-        invokeClientFunction(player, "gateFounder_receiveSettings", gateFounder_config, -1)
+        invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig, -1)
         return
     end
-    if gateFounder_config.OwnedSectorsOnly then
+    if GateFounderConfig.OwnedSectorsOnly then
         local x, y = Sector():getCoordinates()
         local owner = Galaxy():getControllingFaction(x, y)
         if not owner or owner.index ~= buyer.index then
-            invokeClientFunction(player, "gateFounder_receiveSettings", gateFounder_config, -2)
+            invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig, -2)
             return
         end
     end
-    invokeClientFunction(player, "gateFounder_receiveSettings", gateFounder_config, buyer:getValue("gates_founded") or 0)
+    invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig, buyer:getValue("gates_founded") or 0)
 end
 callable(StationFounder, "gateFounder_sendSettings")
 
