@@ -84,13 +84,18 @@ local function createGates(faction, x, y, tx, ty)
 end
 
 function GateFounder.found(tx, ty, confirm, isCommand)
+    Log.Debug("Player:GateFounder - found", tx, ty, confirm, isCommand)
     local server = Server()
     local buyer, _, player = getInteractingFaction(Player().index, AlliancePrivilege.FoundStations)
     if isCommand and config.UseStationFounderShip and not server:hasAdminPrivileges(player) then
         player:sendChatMessage("", 1, "Build station founder ships on any shipyard in order to found gates!"%_t)
         return
     end
-    if not buyer then return end
+    if not buyer then
+        Log.Error("Player:GateFounder - buyer is nil")
+        player:sendChatMessage("", 1, "GateFounder: An error has occured")
+        return
+    end
     if buyer.isPlayer and config.AlliancesOnly then
         player:sendChatMessage("", 1, "Only alliances can found gates!"%_t)
         return

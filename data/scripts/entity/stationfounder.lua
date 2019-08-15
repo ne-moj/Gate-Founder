@@ -275,8 +275,16 @@ callable(StationFounder, "gateFounder_sendSettings")
 function StationFounder.gateFounder_foundGate(tx, ty)
     local buyer, _, player = getInteractingFaction(callingPlayer, AlliancePrivilege.FoundStations)
     if not buyer then return end
-
+  
+    -- QUICKFIX for Windows:
     local status, success = player:invokeFunction("data/scripts/player/gatefounder.lua", "found", tx, ty, "confirm")
+    if status == 3 then
+        status, success = player:invokeFunction("data\\scripts\\player\\gatefounder.lua", "found", tx, ty, "confirm")
+    end
+    if status ~= 0 then
+        player:sendChatMessage("", 1, "GateFounder: An error has occured, status: " .. status)
+        return
+    end
     if success then -- remove ship
         player.craftIndex = Uuid()
         local ship = Entity()
