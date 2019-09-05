@@ -1,101 +1,120 @@
-# ========== mods\Gate Founder\data\scripts\entity\claimalliance.lua ==========
-#: mods\Gate Founder\data\scripts\entity\claimalliance.lua:
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+# ========== data\scripts\entity\claimalliance.lua ==========
+#: data\scripts\entity\claimalliance.lua:
+msgid "Only alliances can claim gates!"
+msgstr "Только альянсы могут присваивать врата!"
+
+#: data\scripts\entity\claimalliance.lua:
+#: data\scripts\entity\stationfounder.lua:
+#: data\scripts\player\gatefounder.lua:
 msgid "Reached the maximum amount of founded gates!"
 msgstr "Достигнуто максимальное количество врат!"
 
 
-# ========== mods\Gate Founder\data\scripts\entity\gate.lua ==========
-#: mods\Gate Founder\data\scripts\entity\gate.lua:
+# ========== data\scripts\entity\gate.lua ==========
+#: data\scripts\entity\gate.lua:
 msgid "'%s' - paid %i credits gate passage fee."
 msgstr "'%s' - заплачено %i кредитов за проход через врата."
 
-#: mods\Gate Founder\data\scripts\entity\gate.lua:
+#: data\scripts\entity\gate.lua:
+msgid "Paid %1% credits gate passage fee."
+msgstr "Заплачено %1% кредитов за проход через врата."
+
+#: data\scripts\entity\gate.lua:
 msgid "Toggle"
 msgstr "Переключить"
 
 
-# ========== mods\Gate Founder\data\scripts\entity\stationfounder.lua ==========
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-msgid "Distance: "
-msgstr "Расстояние: "
-
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-msgid "Max distance: "
-msgstr "Макс. расстояние: "
-
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
+# ========== data\scripts\entity\stationfounder.lua ==========
+#: data\scripts\entity\stationfounder.lua:
 msgid "Gate"
 msgstr "Врата"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
+#: data\scripts\entity\stationfounder.lua:
 msgid "Create a gate that will allow ships to travel to a paired gate in another sector. You pay only for the first gate in a pair. Second gate will be created automatically."
 msgstr "Создать врата, которые позволят кораблям путешествовать ко вторым вратам в другом секторе. Вы платите только за первые врата в паре. Вторые врата будут созданы автоматически."
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
+#: data\scripts\entity\stationfounder.lua:
 msgid "Transform to Gate"
 msgstr "Преобразовать во врата"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
+#: data\scripts\entity\stationfounder.lua:
 msgid "Second gate coordinates"
 msgstr "Координаты вторых врат"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\entity\stationfounder.lua:
+msgid "Distance: "
+msgstr "Расстояние: "
+
+#: data\scripts\entity\stationfounder.lua:
+msgid "Max distance: "
+msgstr "Макс. расстояние: "
+
+#: data\scripts\entity\stationfounder.lua:
+#: data\scripts\player\gatefounder.lua:
 msgid "Gates can't lead in the same sector!"
 msgstr "Врата не могут вести в этот же сектор!"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\entity\stationfounder.lua:
+#: data\scripts\player\gatefounder.lua:
 msgid "Distance between gates is too big!"
 msgstr "Расстояние между вратами слишком велико!"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\entity\stationfounder.lua:
+#: data\scripts\player\gatefounder.lua:
 msgid "Gates can't lead into rifts!"
 msgstr "Врата не могут вести в разломы!"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\entity\stationfounder.lua:
+#: data\scripts\player\gatefounder.lua:
 msgid "Gates can't cross barrier!"
 msgstr "Врата не могут пересекать барьер!"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\entity\stationfounder.lua:
+#: data\scripts\player\gatefounder.lua:
 msgid "Gates that cross barrier need to be built from the inner ring!"
 msgstr "Врата, пересекающие барьер, могут быть построены только из внутреннего кольца!"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\entity\stationfounder.lua:
+#: data\scripts\player\gatefounder.lua:
 msgid "This sector already has gate that leads in \\s(%i:%i)!"
 msgstr "Этот сектор уже имеет врата, ведущие в \\s(%i:%i)!"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\entity\stationfounder.lua:
+#: data\scripts\player\gatefounder.lua:
 msgid "Only alliances can found gates!"
 msgstr "Только альянсы могут создавать врата!"
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
+#: data\scripts\entity\stationfounder.lua:
 msgid "You don't have permissions to found gates for your alliance."
 msgstr "У вас нет разрешения строить врата от имени альянса."
 
-#: mods\Gate Founder\data\scripts\entity\stationfounder.lua:
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\entity\stationfounder.lua:
 msgid "Only faction that controls the sector can found gates!"
 msgstr "Только фракция, контролирующая сектор, может создавать врата!"
 
 
-# ========== mods\Gate Founder\data\scripts\player\gatefounder.lua ==========
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+# ========== data\scripts\player\gatefounder.lua ==========
+#: data\scripts\player\gatefounder.lua:
 msgid "Build station founder ships on any shipyard in order to found gates!"
 msgstr "Постройте корабль-строитель станций на любой верфи, чтобы создавать врата!"
 
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\player\gatefounder.lua:
+msgid "Only faction that controls the orign sector can found gates!"
+msgstr "Только фракция, контролирующая этот сектор, может создавать врата!"
+
+#: data\scripts\player\gatefounder.lua:
+msgid "Only faction that controls the destination sector can found gates!"
+msgstr "Только фракция, контролирующая сектор назначения, может создавать врата!"
+
+#: data\scripts\player\gatefounder.lua:
+msgid "It's not possible to build gates from/to teleporter sectors!"
+msgstr "Невозможно строить врата из/в сектора с телепортерами!"
+
+#: data\scripts\player\gatefounder.lua:
 msgid "Founding a gate from \\s(%i:%i) to \\s(%i:%i) will cost %i credits. Repeat command with additional 'confirm' in the end to found a gate."
 msgstr "Создание врат из \\s(%i:%i) в \\s(%i:%i) будет стоить %i кредитов. Повторите команду с добавлением 'confirm' в конце, чтобы создать врата."
 
-#: mods\Gate Founder\data\scripts\player\gatefounder.lua:
+#: data\scripts\player\gatefounder.lua:
 msgid "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."
 msgstr "Врата из \\s(%i:%i) в \\s(%i:%i) были успешно созданы."
 

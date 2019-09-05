@@ -15,6 +15,10 @@ function ClaimFromAlliance.claim()
     local entity = Entity()
 
     if entity.hasScript and entity:hasScript("gate.lua") then -- claim both gates at once
+        if faction.isPlayer and GateFounderConfig.AlliancesOnly then
+            player:sendChatMessage("", 1, "Only alliances can claim gates!"%_t)
+            return
+        end
         local gateCount = faction:getValue("gates_founded") or 0
         if gateCount >= GateFounderConfig.MaxGatesPerFaction then
             player:sendChatMessage("", 1, "Reached the maximum amount of founded gates!"%_t)
