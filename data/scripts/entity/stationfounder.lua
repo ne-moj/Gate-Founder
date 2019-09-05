@@ -1,21 +1,12 @@
 local PassageMap, Azimuth -- includes
 local gateFounder_window, gateFounder_xBox, gateFounder_yBox, gateFounder_coordsLabel, gateFounder_distanceLabel, gateFounder_maxDistanceLabel, gateFounder_priceLabel, gateFounder_foundGateBtn -- UI
 local gateFounder_x, gateFounder_y, gateFounder_passageMap -- client
-local gateFounder_configOptions -- server
 local GateFounderConfig -- client/server
 local gateFounder_initUI -- overriden functions
 local gateFounder_version = GameVersion() -- client/server
-local gateFounder_compat_stations, gateFounder_compat_stationsByButton -- compatibility
 
-if gateFounder_version.minor > 23 then -- Compatibility
-    gateFounder_compat_stations = StationFounder.stations
-    gateFounder_compat_stationsByButton = StationFounder.stationsByButton
-else
-    gateFounder_compat_stations = stations
-    gateFounder_compat_stationsByButton = stationsByButton
-end
 
-gateFounder_compat_stations[#gateFounder_compat_stations+1] = {
+StationFounder.stations[#StationFounder.stations+1] = {
   isGateFounder = true,
   name = "Gate"%_t,
   tooltip = "Create a gate that will allow ships to travel to a paired gate in another sector. You pay only for the first gate in a pair. Second gate will be created automatically."%_t,
@@ -23,6 +14,7 @@ gateFounder_compat_stations[#gateFounder_compat_stations+1] = {
 }
 
 if onClient() then
+
 
 PassageMap = include("passagemap")
 include("azimuthlib-uiproportionalsplitter")
@@ -83,7 +75,7 @@ function StationFounder.buildMiscStationGui(tab)
     frame.paddingBottom = 17
 
     local count = 0
-    for index, station in pairs(gateFounder_compat_stations) do
+    for index, station in pairs(StationFounder.stations) do
 
         local stationName = station.name
 
@@ -123,7 +115,7 @@ function StationFounder.buildMiscStationGui(tab)
         label.size = vec2(vsplit.right.size.x, vsplit.right.size.y)
         label:setRightAligned()
 
-        gateFounder_compat_stationsByButton[button.index] = index
+        StationFounder.stationsByButton[button.index] = index
 
         count = count + 1
     end
@@ -131,8 +123,8 @@ end
 
 local gateFounder_onFoundStationButtonPress = StationFounder.onFoundStationButtonPress
 function StationFounder.onFoundStationButtonPress(button)
-    local selectedStation = gateFounder_compat_stationsByButton[button.index]
-    local template = gateFounder_compat_stations[selectedStation]
+    local selectedStation = StationFounder.stationsByButton[button.index]
+    local template = StationFounder.stations[selectedStation]
 
     if not template.isGateFounder then
         gateFounder_onFoundStationButtonPress(button) -- continue vanilla behavior
@@ -179,7 +171,8 @@ function StationFounder.gateFounder_onCoordinatesChanged()
     end
     if not isError then
         -- check if sector already has a gate that leads to that sector
-        local gates = {Sector():getEntitiesByScript("data/scripts/entity/gate.lua")}
+        --local gates = {Sector():getEntitiesByScript("data/scripts/entity/gate.lua")}
+        local gates = {Sector():getEntitiesByScript("gate.lua")}
         local wormhole, wx, wy
         for i = 1, #gates do
             wormhole = WormHole(gates[i].index)
@@ -238,21 +231,7 @@ end
 else -- onServer
 
 
-Azimuth = include("azimuthlib-basic")
-
--- load config
-gateFounder_configOptions = {
-  OwnedSectorsOnly = { default = true, comment = "If true, faction can spawn the gate only if it owns sector." },
-  MaxDistance = { default = 15, min = 1, format = "floor", comment = "Max gate distance." },
-  BasePriceMultiplier = { default = 15000, min = 1, comment = "Affects basic gate price." },
-  MaxGatesPerFaction = { default = 5, min = 0, format = "floor", comment = "How many gates can each faction found." },
-  AlliancesOnly = { default = false, comment = "If true, only alliances wiil be able to found gates." },
-  SubsequentGatePriceMultiplier = { default = 1.1, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
-  SubsequentGatePricePower = { default = 1.01, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
-  AllowToPassBarrier = { default = false, comment = "If true, players will be able to build gates through barrier." }
-}
-GateFounderConfig = Azimuth.loadConfig("GateFounder", gateFounder_configOptions)
-GateFounderConfig._version = nil
+Azimuth, GateFounderConfig = unpack(include("gatefounderinit"))
 
 function StationFounder.gateFounder_sendSettings()
     local buyer, _, player, alliance = getInteractingFaction(callingPlayer)
@@ -260,7 +239,7 @@ function StationFounder.gateFounder_sendSettings()
         invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig, -1)
         return
     end
-    if GateFounderConfig.OwnedSectorsOnly then
+    if GateFounderConfig.ShouldOwnOriginSector then
         local x, y = Sector():getCoordinates()
         local owner = Galaxy():getControllingFaction(x, y)
         if not owner or owner.index ~= buyer.index then
@@ -276,11 +255,7 @@ function StationFounder.gateFounder_foundGate(tx, ty)
     local buyer, _, player = getInteractingFaction(callingPlayer, AlliancePrivilege.FoundStations)
     if not buyer then return end
   
-    -- QUICKFIX for Windows:
-    local status, success = player:invokeFunction("data/scripts/player/gatefounder.lua", "found", tx, ty, "confirm")
-    if status == 3 then
-        status, success = player:invokeFunction("data\\scripts\\player\\gatefounder.lua", "found", tx, ty, "confirm")
-    end
+     local status, success = player:invokeFunction("gatefounder.lua", "found", tx, ty, "confirm")
     if status ~= 0 then
         player:sendChatMessage("", 1, "GateFounder: An error has occured, status: " .. status)
         return

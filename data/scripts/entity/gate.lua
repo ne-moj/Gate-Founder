@@ -1,5 +1,22 @@
--- Override
+local gateFounder_canTransfer_post0_26 -- extended functions
+local gateFounder_gameVersion = GameVersion()
+
+if gateFounder_gameVersion.minor >= 26 then
+
+gateFounder_canTransfer_post0_26 = Gate.canTransfer
 function Gate.canTransfer(index)
+    local ship = Sector():getEntity(index)
+    -- gates can't travel through gates
+    if ship.hasComponent and ship:hasComponent(ComponentType.WormHole) then
+        return 0
+    end
+
+    return gateFounder_canTransfer_post0_26(index)
+end
+
+else -- pre 0.26
+
+function Gate.canTransfer(index) -- overridden
     local ship = Sector():getEntity(index)
     local faction = Faction(ship.factionIndex)
 
@@ -47,25 +64,40 @@ function Gate.canTransfer(index)
     return 1
 end
 
+end
+
 -- New
+local gateFounder_interactionPossible = Gate.interactionPossible
 function Gate.interactionPossible(playerIndex, option)
-    if option == 0 and not checkEntityInteractionPermissions(Entity(), AlliancePrivilege.ManageStations) then
-        return false
+    local canToggle = checkEntityInteractionPermissions(Entity(), AlliancePrivilege.ManageStations)
+    local canDelete = checkEntityInteractionPermissions(Entity(), AlliancePrivilege.FoundStations)
+
+    if option == 0 then
+        return canToggle
     end
-    if option == 1 and not checkEntityInteractionPermissions(Entity(), AlliancePrivilege.FoundStations) then
+    if option == 1 then
+        return canDelete
+    end
+    if not canToggle and not canDelete then
+        if gateFounder_interactionPossible then
+            return gateFounder_interactionPossible(playerIndex, option)
+        end
         return false
     end
     return true
 end
 
-function Gate.initUI()
-    ScriptUI():registerInteraction("Toggle"%_t, "onToggle");
-    ScriptUI():registerInteraction("Destroy"%_t, "onDestroy");
+local gateFounder_initUI = Gate.initUI
+function Gate.initUI(...)
+    if gateFounder_initUI then gateFounder_initUI(...) end
+
+    ScriptUI():registerInteraction("Toggle"%_t, "gateFounder_onToggle");
+    ScriptUI():registerInteraction("Destroy"%_t, "gateFounder_onDestroy");
 end
 
-function Gate.onToggle()
+function Gate.gateFounder_onToggle()
     if onClient() then
-        invokeServerFunction("onToggle")
+        invokeServerFunction("gateFounder_onToggle")
         return
     end
     local entity = Entity()
@@ -75,7 +107,7 @@ function Gate.onToggle()
     local wormhole = entity:getWormholeComponent()
     local tx, ty = wormhole:getTargetCoordinates()
     if Galaxy():sectorLoaded(tx, ty) then
-        invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "data/scripts/sector/gatefounder.lua", "toggleGate", faction.index, x, y, not wormhole.enabled)
+        invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "gatefounder.lua", "toggleGate", faction.index, x, y, not wormhole.enabled)
     else
         local gatesInfo = Server():getValue("gate_toggler_"..tx.."_"..ty)
         if gatesInfo then
@@ -86,13 +118,14 @@ function Gate.onToggle()
         Server():setValue("gate_toggler_"..tx.."_"..ty, gatesInfo)
     end
     wormhole.enabled = not wormhole.enabled
+    callingPlayer = nil -- we need 'updateTooltip' to broadcast the changes
     Gate.updateTooltip(nil, true) -- Integration: Compass-like Gate Pixel Icons
 end
-callable(Gate, "onToggle")
+callable(Gate, "gateFounder_onToggle")
 
-function Gate.onDestroy()
+function Gate.gateFounder_onDestroy()
     if onClient() then
-        invokeServerFunction("onDestroy")
+        invokeServerFunction("gateFounder_onDestroy")
         return
     end
     local entity = Entity()
@@ -102,7 +135,7 @@ function Gate.onDestroy()
     local wormhole = entity:getWormholeComponent()
     local tx, ty = wormhole:getTargetCoordinates()
     if Galaxy():sectorLoaded(tx, ty) then
-        invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "data/scripts/sector/gatefounder.lua", "destroyGate", faction.index, x, y)
+        invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "gatefounder.lua", "destroyGate", faction.index, x, y)
     else
         local gatesInfo = Server():getValue("gate_destroyer_"..tx.."_"..ty)
         if gatesInfo then
@@ -118,4 +151,4 @@ function Gate.onDestroy()
         faction:setValue("gates_founded", gateCount - 1)
     end
 end
-callable(Gate, "onDestroy")
+callable(Gate, "gateFounder_onDestroy")

@@ -13,11 +13,7 @@ function execute(sender, commandName, x, y, confirm)
     if not x or not y then
         player:sendChatMessage("Server", 0, getHelp())
     else
-        -- QUICKFIX for Windows:
-        local status = player:invokeFunction("data/scripts/player/gatefounder.lua", "found", x, y, confirm, true)
-        if status == 3 then
-            status = player:invokeFunction("data\\scripts\\player\\gatefounder.lua", "found", x, y, confirm, true)
-        end
+        local status = player:invokeFunction("gatefounder.lua", "found", x, y, confirm, true)
         if status ~= 0 then
             player:sendChatMessage("", 1, "GateFounder: Command - an error has occured, status: " .. status)
         end

@@ -1,4 +1,5 @@
 if onClient() then return end
+
 package.path = package.path .. ";data/scripts/lib/?.lua"
 include("faction")
 include("galaxy")
@@ -6,36 +7,11 @@ include("stringutility")
 local PassageMap = include("passagemap")
 local Placer = include("placer")
 local PlanGenerator = include("plangenerator")
-local Azimuth = include("azimuthlib-basic")
+local SectorSpecifics = include("sectorspecifics")
+local Azimuth, Config, Log = unpack(include("gatefounderinit"))
 
 -- namespace GateFounder
 GateFounder = {}
-
--- load config
-local configOptions = {
-  _version = { default = "1.1", comment = "Config version. Don't touch." },
-  LogLevel = { default = 2, min = 0, max = 4, format = "floor", comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug." },
-  OwnedSectorsOnly = { default = true, comment = "If true, faction can spawn the gate only if it owns sector." },
-  MaxDistance = { default = 15, min = 1, format = "floor", comment = "Max gate distance." },
-  BasePriceMultiplier = { default = 15000, min = 1, comment = "Affects basic gate price." },
-  MaxGatesPerFaction = { default = 5, min = 0, format = "floor", comment = "How many gates can each faction found." },
-  AlliancesOnly = { default = false, comment = "If true, only alliances wiil be able to found gates." },
-  SubsequentGatePriceMultiplier = { default = 1.1, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
-  SubsequentGatePricePower = { default = 1.01, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula." },
-  AllowToPassBarrier = { default = false, comment = "If true, players will be able to build gates through barrier." },
-  UseStationFounderShip = { default = true, comment = "If true, in order to found gates you'll need to build station founder ship on any shipyard." }
-}
-local config, isModified = Azimuth.loadConfig("GateFounder", configOptions)
-if config._version == "1.0" then
-    config._version = "1.1"
-    config.UseStationFounderShip = false -- use old settings to avoid confusion
-    isModified = true
-end
-if isModified then
-    Azimuth.saveConfig("GateFounder", config, configOptions)
-end
-local Log = Azimuth.logs("GateFounder", config.LogLevel)
-
 
 local function createGates(faction, x, y, tx, ty)
     local desc = EntityDescriptor()
@@ -86,43 +62,54 @@ end
 function GateFounder.found(tx, ty, confirm, isCommand)
     Log.Debug("Player:GateFounder - found", tx, ty, confirm, isCommand)
     local server = Server()
-    local buyer, _, player = getInteractingFaction(Player().index, AlliancePrivilege.FoundStations)
-    if isCommand and config.UseStationFounderShip and not server:hasAdminPrivileges(player) then
+    local player = Player()
+    local isAdmin = server:hasAdminPrivileges(player)
+
+    if isCommand and Config.UseStationFounderShip and not isAdmin then
         player:sendChatMessage("", 1, "Build station founder ships on any shipyard in order to found gates!"%_t)
         return
     end
+
+    local buyer, _, player = getInteractingFaction(player.index, AlliancePrivilege.FoundStations)
     if not buyer then
         Log.Error("Player:GateFounder - buyer is nil")
         player:sendChatMessage("", 1, "GateFounder: An error has occured")
         return
     end
-    if buyer.isPlayer and config.AlliancesOnly then
+
+    if buyer.isPlayer and Config.AlliancesOnly then
         player:sendChatMessage("", 1, "Only alliances can found gates!"%_t)
         return
     end
+
     local gateCount = buyer:getValue("gates_founded") or 0
-    if gateCount >= config.MaxGatesPerFaction then
+    if gateCount >= Config.MaxGatesPerFaction then
         player:sendChatMessage("", 1, "Reached the maximum amount of founded gates!"%_t)
         return
     end
-    local x, y = Sector():getCoordinates()
+
+    local sector = Sector()
+    local x, y = sector:getCoordinates()
     if x == tx and y == ty then       
         player:sendChatMessage("", 1, "Gates can't lead in the same sector!"%_t)
         return
     end
+
     local d = distance(vec2(x, y), vec2(tx, ty))
-    if d > config.MaxDistance then
+    if d > Config.MaxDistance then
         player:sendChatMessage("", 1, "Distance between gates is too big!"%_t)
         return
     end
+
     passageMap = PassageMap(server.seed)
-    if not passageMap:passable(tx, ty) then
+    if not passageMap:passable(tx, ty) and not isAdmin then
         player:sendChatMessage("", 1, "Gates can't lead into rifts!"%_t)
         return
     end
+
     local xyInsideRing = passageMap:insideRing(x, y)
     if xyInsideRing ~= passageMap:insideRing(tx, ty) then
-        if not config.AllowToPassBarrier then
+        if not Config.AllowToPassBarrier then
             player:sendChatMessage("", 1, "Gates can't cross barrier!"%_t)
             return
         elseif not xyInsideRing then
@@ -130,15 +117,40 @@ function GateFounder.found(tx, ty, confirm, isCommand)
             return
         end
     end
-    if config.OwnedSectorsOnly then
-        local owner = Galaxy():getControllingFaction(x, y)
+
+    local galaxy = Galaxy()
+    if Config.ShouldOwnOriginSector then
+        local owner = galaxy:getControllingFaction(x, y)
         if not owner or owner.index ~= buyer.index then
-            player:sendChatMessage("", 1, "Only faction that controls the sector can found gates!"%_t)
+            player:sendChatMessage("", 1, "Only faction that controls the orign sector can found gates!"%_t)
             return
         end
     end
+
+    if Config.ShouldOwnDestinationSector then
+        local owner = galaxy:getControllingFaction(tx, ty)
+        if not owner or owner.index ~= buyer.index then
+            player:sendChatMessage("", 1, "Only faction that controls the destination sector can found gates!"%_t)
+            return
+        end
+    end
+
+    if sector:hasScript("activateteleport.lua") then
+        player:sendChatMessage("", 1, "It's not possible to build gates from/to teleporter sectors!"%_t)
+        return
+    end
+
+    if confirm and confirm == "confirm" then -- only check when player is ready to pay, otherwise people will use this to search for teleporter sectors
+        local generatorScript = SectorSpecifics(tx, ty, Server().seed):getScript()
+        if string.gsub(generatorScript, "^[^/]+/", "") == "teleporter" then
+            player:sendChatMessage("", 1, "It's not possible to build gates from/to teleporter sectors!"%_t)
+            return
+        end
+    end
+
     -- check if sector already has a gate that leads to that sector
-    local gates = {Sector():getEntitiesByScript("data/scripts/entity/gate.lua")}
+    local gates = {sector:getEntitiesByScript("gate.lua")}
+    Log.Debug("Player gatefounder - found, gates count: %i", #gates)
     local wormhole, wx, wy
     for i = 1, #gates do
         wormhole = WormHole(gates[i].index)
@@ -148,17 +160,19 @@ function GateFounder.found(tx, ty, confirm, isCommand)
             return
         end
     end
+
     -- now calculate basic gate transfer fee
     local price = math.ceil(d * 30 * Balancing_GetSectorRichnessFactor((x + tx) / 2, (y + ty) / 2))
     Log.Debug("Base fee %i", price)
     -- and resulting price
-    price = price * config.BasePriceMultiplier
+    price = price * Config.BasePriceMultiplier
     Log.Debug("BasePriceMultiplier %f", price)
-    price = price * math.pow(config.SubsequentGatePriceMultiplier, gateCount)
+    price = price * math.pow(Config.SubsequentGatePriceMultiplier, gateCount)
     Log.Debug("SubsequentGatePriceMultiplier %f", price)
-    price = math.pow(price, math.pow(config.SubsequentGatePricePower, gateCount))
+    price = math.pow(price, math.pow(Config.SubsequentGatePricePower, gateCount))
     Log.Debug("SubsequentGatePricePower %f", price)
     price = math.ceil(price)
+
     if not confirm or confirm ~= "confirm" then
         player:sendChatMessage("Server"%_t, 0, "Founding a gate from \\s(%i:%i) to \\s(%i:%i) will cost %i credits. Repeat command with additional 'confirm' in the end to found a gate."%_t, x, y, tx, ty, price)
     else -- try to found a gate
@@ -173,7 +187,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         Placer.resolveIntersections(gates)
         -- try to spawn the gate back if target sector is loaded
         if Galaxy():sectorLoaded(tx, ty) then
-            invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "data/scripts/sector/gatefounder.lua", "foundGate", buyer.index, x, y)
+            invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "gatefounder.lua", "foundGate", buyer.index, x, y)
         else -- save data so the gate back will be spawned once someone will enter that sector
             local gatesInfo = server:getValue("gate_founder_"..tx.."_"..ty)
             if gatesInfo then

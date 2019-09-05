@@ -1,25 +1,21 @@
 if onClient() then return end
+
 package.path = package.path .. ";data/scripts/lib/?.lua"
+
 local Placer = include("placer")
 local PlanGenerator = include("plangenerator")
-local Azimuth = include("azimuthlib-basic")
+local Azimuth, Config, Log = unpack(include("gatefounderinit"))
 
 -- namespace GateFounder
 GateFounder = {}
 
-local Log, sector, x, y
+local sector, x, y
 
 function GateFounder.initialize()
-    -- load config for logs
-    local configOptions = {
-      LogLevel = { default = 2, min = 0, max = 4, format = "floor" },
-    }
-    local config = Azimuth.loadConfig("GateFounder", configOptions)
-    Log = Azimuth.logs("GateFounder", config.LogLevel)
-
     sector = Sector()
     x, y = sector:getCoordinates()
-    local gateEntities = {sector:getEntitiesByScript("data/scripts/entity/gate.lua")}
+    local gateEntities = {sector:getEntitiesByScript("gate.lua")}
+    Log.Debug("(%i:%i) gatefounder init, gates count: %i", x, y, #gateEntities)
 
     -- found gates
     local _x_y = "_"..x.."_"..y
@@ -171,7 +167,8 @@ function GateFounder.foundGate(factionIndex, tx, ty, notRemote)
         return sector:createEntity(desc)
     end
     -- remote call - resolve intersections
-    local gates = {sector:getEntitiesByScript("data/scripts/entity/gate.lua")}
+    local gates = {sector:getEntitiesByScript("gate.lua")}
+    Log.Debug("(%i:%i) gatefounder foundGate back, gates count: %i", x, y, #gates)
     gates[#gates+1] = sector:createEntity(desc)
     Placer.resolveIntersections(gates)
 end
@@ -181,7 +178,8 @@ function GateFounder.destroyGate(factionIndex, tx, ty, gateEntities)
     --local faction = Faction(factionIndex)
     --if not faction then return end
     if not gateEntities then
-        gateEntities = {sector:getEntitiesByScript("data/scripts/entity/gate.lua")}
+        gateEntities = {sector:getEntitiesByScript("gate.lua")}
+        Log.Debug("(%i:%i) destroyGate, gates count: %i", x, y, #gateEntities)
     end
     local wx, wy
     for k, gate in pairs(gateEntities) do
@@ -203,9 +201,10 @@ function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
     local isRemote = true
     if not gateEntities then
         isRemote = false
-        gateEntities = {sector:getEntitiesByScript("data/scripts/entity/gate.lua")}
+        gateEntities = {sector:getEntitiesByScript("gate.lua")}
+        Log.Debug("(%i:%i) toggleGate, gates count: %i", x, y, #gateEntities)
     end
-    local wh, wx, wy
+    local wh, wx, wy, status
     for _, gate in pairs(gateEntities) do
         --if gate.factionIndex == factionIndex then
             wh = gate:getWormholeComponent()
@@ -213,7 +212,10 @@ function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
             if wx == tx and wy == ty then
                 Log.Debug("Gate found and toggled")
                 wh.enabled = enable
-                gate:invokeFunction("data/scripts/entity/gate.lua", "updateTooltip", nil, true) -- Integration: Compass-like Gate Pixel Icons
+                status = gate:invokeFunction("gate.lua", "updateTooltip", nil, true) -- Integration: Compass-like Gate Pixel Icons
+                if status ~= 0 then
+                    Log.Error("toggleGate - status is %s", tostring(status))
+                end
                 return
             end
         --end
@@ -240,7 +242,8 @@ function GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
         return
     end
     if not gateEntities then
-        gateEntities = {sector:getEntitiesByScript("data/scripts/entity/gate.lua")}
+        gateEntities = {sector:getEntitiesByScript("gate.lua")}
+        Log.Debug("(%i:%i) claimGate, gates count: %i", x, y, #gateEntities)
     end
     local wx, wy
     for k, gate in pairs(gateEntities) do
