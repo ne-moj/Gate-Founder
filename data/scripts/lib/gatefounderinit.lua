@@ -22,7 +22,8 @@ local configOptions = {
   AllowToPassBarrier = { default = false, comment = "If true, players will be able to build gates through barrier." },
   UseStationFounderShip = { default = true, comment = "If true, in order to found gates you'll need to build station founder ship on any shipyard." },
   ShouldOwnOriginSector = { default = false, comment = "If true, faction can found a gate only if it owns current sector." },
-  ShouldOwnDestinationSector = { default = false, comment = "If true, faction can found a gate only if it owns destinaton sector." }
+  ShouldOwnDestinationSector = { default = false, comment = "If true, faction can found a gate only if it owns destinaton sector." },
+  AllowGatesToCenter = { default = false, comment = "If true, it's possible to build gates to/from center of a galaxy (0:0)." }
 }
 local isModified
 Config, isModified = Azimuth.loadConfig("GateFounder", configOptions)

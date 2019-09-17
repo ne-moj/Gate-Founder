@@ -77,13 +77,13 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         return
     end
 
-    if buyer.isPlayer and Config.AlliancesOnly then
+    if buyer.isPlayer and Config.AlliancesOnly and not isAdmin then
         player:sendChatMessage("", 1, "Only alliances can found gates!"%_t)
         return
     end
 
     local gateCount = buyer:getValue("gates_founded") or 0
-    if gateCount >= Config.MaxGatesPerFaction then
+    if gateCount >= Config.MaxGatesPerFaction and not isAdmin then
         player:sendChatMessage("", 1, "Reached the maximum amount of founded gates!"%_t)
         return
     end
@@ -94,9 +94,14 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         player:sendChatMessage("", 1, "Gates can't lead in the same sector!"%_t)
         return
     end
+    
+    if ((x == 0 and y == 0) or (tx == 0 and ty == 0)) and not isAdmin then
+        player:sendChatMessage("", 1, "Gates can't lead to the center of the galaxy!"%_t)
+        return
+    end
 
     local d = distance(vec2(x, y), vec2(tx, ty))
-    if d > Config.MaxDistance then
+    if d > Config.MaxDistance and not isAdmin then
         player:sendChatMessage("", 1, "Distance between gates is too big!"%_t)
         return
     end
@@ -108,7 +113,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
     end
 
     local xyInsideRing = passageMap:insideRing(x, y)
-    if xyInsideRing ~= passageMap:insideRing(tx, ty) then
+    if xyInsideRing ~= passageMap:insideRing(tx, ty) and not isAdmin then
         if not Config.AllowToPassBarrier then
             player:sendChatMessage("", 1, "Gates can't cross barrier!"%_t)
             return
@@ -119,7 +124,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
     end
 
     local galaxy = Galaxy()
-    if Config.ShouldOwnOriginSector then
+    if Config.ShouldOwnOriginSector and not isAdmin then
         local owner = galaxy:getControllingFaction(x, y)
         if not owner or owner.index ~= buyer.index then
             player:sendChatMessage("", 1, "Only faction that controls the orign sector can found gates!"%_t)
@@ -127,7 +132,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         end
     end
 
-    if Config.ShouldOwnDestinationSector then
+    if Config.ShouldOwnDestinationSector and not isAdmin then
         local owner = galaxy:getControllingFaction(tx, ty)
         if not owner or owner.index ~= buyer.index then
             player:sendChatMessage("", 1, "Only faction that controls the destination sector can found gates!"%_t)
@@ -176,10 +181,12 @@ function GateFounder.found(tx, ty, confirm, isCommand)
     if not confirm or confirm ~= "confirm" then
         player:sendChatMessage("Server"%_t, 0, "Founding a gate from \\s(%i:%i) to \\s(%i:%i) will cost %i credits. Repeat command with additional 'confirm' in the end to found a gate."%_t, x, y, tx, ty, price)
     else -- try to found a gate
-        local canPay, msg, args = buyer:canPay(price)
-        if not canPay then
-            player:sendChatMessage("", 1, msg, unpack(args))
-            return
+        if not isAdmin then
+            local canPay, msg, args = buyer:canPay(price)
+            if not canPay then
+                player:sendChatMessage("", 1, msg, unpack(args))
+                return
+            end
         end
         -- increment gate count and spawn a gate
         buyer:setValue("gates_founded", gateCount + 1)

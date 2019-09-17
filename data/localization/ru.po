@@ -99,6 +99,10 @@ msgid "Build station founder ships on any shipyard in order to found gates!"
 msgstr "Постройте корабль-строитель станций на любой верфи, чтобы создавать врата!"
 
 #: data\scripts\player\gatefounder.lua:
+msgid "Gates can't lead to the center of the galaxy!"
+msgstr "Врата не могут вести в центр галактики!"
+
+#: data\scripts\player\gatefounder.lua:
 msgid "Only faction that controls the orign sector can found gates!"
 msgstr "Только фракция, контролирующая этот сектор, может создавать врата!"
 
