@@ -30,7 +30,7 @@ function ClaimFromAlliance.claim()
         local wormhole = entity:getWormholeComponent()
         local tx, ty = wormhole:getTargetCoordinates()
         if Galaxy():sectorLoaded(tx, ty) then
-            invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "gatefounder.lua", "claimGate", faction.index, x, y)
+            invokeSectorFunction(tx, ty, true, "gatefounder.lua", "claimGate", faction.index, x, y)
         else
             local gatesInfo = Server():getValue("gate_claim_"..tx.."_"..ty)
             if gatesInfo then

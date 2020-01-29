@@ -9,11 +9,10 @@ Azimuth = include("azimuthlib-basic")
 
 -- load config
 local configOptions = {
-  _version = { default = "1.2", comment = "Config version. Don't touch." },
+  _version = { default = "1.3", comment = "Config version. Don't touch." },
   LogLevel = { default = 2, min = 0, max = 4, format = "floor", comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug." },
   FileLogLevel = { default = 2, min = 0, max = 4, format = "floor", comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug." },
-  MaxDistance_Post0_26 = { default = 45, min = 1, format = "floor", comment = "Max gate distance for Avorion >= 0.26." },
-  MaxDistance = { default = 15, min = 1, format = "floor", comment = "Max gate distance for Avorion pre 0.26." },
+  MaxDistance = { default = 45, min = 1, format = "floor", comment = "Max gate distance." },
   BasePriceMultiplier = { default = 15000, min = 1, comment = "Affects basic gate price." },
   MaxGatesPerFaction = { default = 5, min = 0, format = "floor", comment = "How many gates can each faction found." },
   AlliancesOnly = { default = false, comment = "If true, only alliances wiil be able to found gates." },
@@ -39,15 +38,16 @@ if Config._version == "1.1" then
     Config.OwnedSectorsOnly = nil -- remove old config
     Config.FileLogLevel = Config.LogLevel -- sync log levels
 end
+if Config._version == "1.2" then
+    Config._version = "1.3"
+    isModified = true
+    Config.MaxDistance = Config.MaxDistance_Post0_26 and Config.MaxDistance_Post0_26 or 45 -- use new 0.26+ distance
+    Config.MaxDistance_Post0_26 = nil -- remove old config
+end
 if isModified then
     Azimuth.saveConfig("GateFounder", Config, configOptions)
 end
-Config._version = nil
-
-local version = GameVersion()
-if version.minor >= 26 then
-    Config.MaxDistance = Config.MaxDistance_Post0_26
-end
+configOptions = nil
 
 Log = Azimuth.logs("GateFounder", Config.LogLevel, Config.FileLogLevel)
 

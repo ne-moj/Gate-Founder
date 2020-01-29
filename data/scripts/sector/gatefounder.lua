@@ -164,12 +164,12 @@ function GateFounder.foundGate(factionIndex, tx, ty, notRemote)
     wormhole.oneWay = true
 
     if notRemote then
-        return sector:createEntity(desc)
+        return sector:createEntity(desc, EntityArrivalType.Default)
     end
     -- remote call - resolve intersections
     local gates = {sector:getEntitiesByScript("gate.lua")}
     Log.Debug("(%i:%i) gatefounder foundGate back, gates count: %i", x, y, #gates)
-    gates[#gates+1] = sector:createEntity(desc)
+    gates[#gates+1] = sector:createEntity(desc, EntityArrivalType.Default)
     Placer.resolveIntersections(gates)
 end
 

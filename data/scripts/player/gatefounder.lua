@@ -56,7 +56,7 @@ local function createGates(faction, x, y, tx, ty)
     wormhole.passageSize = 50
     wormhole.oneWay = true
 
-    return Sector():createEntity(desc)
+    return Sector():createEntity(desc, EntityArrivalType.Default)
 end
 
 function GateFounder.found(tx, ty, confirm, isCommand)
@@ -194,7 +194,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         Placer.resolveIntersections(gates)
         -- try to spawn the gate back if target sector is loaded
         if Galaxy():sectorLoaded(tx, ty) then
-            invokeRemoteSectorFunction(tx, ty, "Couldn't load the sector", "gatefounder.lua", "foundGate", buyer.index, x, y)
+            invokeSectorFunction(tx, ty, true, "gatefounder.lua", "foundGate", buyer.index, x, y)
         else -- save data so the gate back will be spawned once someone will enter that sector
             local gatesInfo = server:getValue("gate_founder_"..tx.."_"..ty)
             if gatesInfo then
