@@ -7,6 +7,7 @@ include("stringutility")
 local PassageMap = include("passagemap")
 local Placer = include("placer")
 local PlanGenerator = include("plangenerator")
+local StyleGenerator = include ("internal/stylegenerator.lua")
 local SectorSpecifics = include("sectorspecifics")
 local Azimuth, Config, Log = unpack(include("gatefounderinit"))
 
@@ -36,7 +37,15 @@ local function createGates(faction, x, y, tx, ty)
       ComponentType.EnergySystem,
       ComponentType.EntityTransferrer
     )
-    local plan = PlanGenerator.makeGatePlan(Seed(faction.index) + Server().seed, faction.color1, faction.color2, faction.color3)
+    
+    local styleGenerator = StyleGenerator(faction.index)
+    local c1 = styleGenerator.factionDetails.baseColor
+    local c2 = ColorRGB(0.25, 0.25, 0.25)
+    local c3 = styleGenerator.factionDetails.paintColor
+    c1 = ColorRGB(c1.r, c1.g, c1.b)
+    c3 = ColorRGB(c3.r, c3.g, c3.b)
+    
+    local plan = PlanGenerator.makeGatePlan(Seed(faction.index) + Server().seed, c1, c2, c3)
     local dir = vec3(tx - x, 0, ty - y)
     normalize_ip(dir)
 
@@ -47,6 +56,7 @@ local function createGates(faction, x, y, tx, ty)
     desc.position = position
     desc.factionIndex = faction.index
     desc.invincible = true
+    desc:setValue("gateFounder_origFaction", faction.index)
     desc:addScript("data/scripts/entity/gate.lua")
 
     local wormhole = desc:getComponent(ComponentType.WormHole)
@@ -60,7 +70,7 @@ local function createGates(faction, x, y, tx, ty)
 end
 
 function GateFounder.found(tx, ty, confirm, isCommand)
-    Log.Debug("Player:GateFounder - found", tx, ty, confirm, isCommand)
+    Log:Debug("Player:GateFounder - found", tx, ty, confirm, isCommand)
     local server = Server()
     local player = Player()
     local isAdmin = server:hasAdminPrivileges(player)
@@ -72,7 +82,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
 
     local buyer, _, player = getInteractingFaction(player.index, AlliancePrivilege.FoundStations)
     if not buyer then
-        Log.Error("Player:GateFounder - buyer is nil")
+        Log:Error("Player:GateFounder - buyer is nil")
         player:sendChatMessage("", 1, "GateFounder: An error has occured")
         return
     end
@@ -94,7 +104,19 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         player:sendChatMessage("", 1, "Gates can't lead in the same sector!"%_t)
         return
     end
-    
+
+    if Config.NeedHelpFromDestinationSector and not isAdmin then
+        local playerHelp = player:getNamesOfShipsInSector(tx, ty)
+        local allianceHelp
+        if player.index ~= buyer.index then
+            allianceHelp = buyer:getNamesOfShipsInSector(tx, ty)
+        end
+        if not playerHelp and not allianceHelp then
+            player:sendChatMessage("", 1, "You need to have a ship/station in the target sector to help you build a gate!"%_t)
+            return
+        end
+    end
+
     if ((x == 0 and y == 0) or (tx == 0 and ty == 0)) and not isAdmin then
         player:sendChatMessage("", 1, "Gates can't lead to the center of the galaxy!"%_t)
         return
@@ -155,7 +177,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
 
     -- check if sector already has a gate that leads to that sector
     local gates = {sector:getEntitiesByScript("gate.lua")}
-    Log.Debug("Player gatefounder - found, gates count: %i", #gates)
+    Log:Debug("Player gatefounder - found, gates count: %i", #gates)
     local wormhole, wx, wy
     for i = 1, #gates do
         wormhole = WormHole(gates[i].index)
@@ -168,14 +190,14 @@ function GateFounder.found(tx, ty, confirm, isCommand)
 
     -- now calculate basic gate transfer fee
     local price = math.ceil(d * 30 * Balancing_GetSectorRichnessFactor((x + tx) / 2, (y + ty) / 2))
-    Log.Debug("Base fee %i", price)
+    Log:Debug("Base fee %i", price)
     -- and resulting price
     price = price * Config.BasePriceMultiplier
-    Log.Debug("BasePriceMultiplier %f", price)
+    Log:Debug("BasePriceMultiplier %f", price)
     price = price * math.pow(Config.SubsequentGatePriceMultiplier, gateCount)
-    Log.Debug("SubsequentGatePriceMultiplier %f", price)
+    Log:Debug("SubsequentGatePriceMultiplier %f", price)
     price = math.pow(price, math.pow(Config.SubsequentGatePricePower, gateCount))
-    Log.Debug("SubsequentGatePricePower %f", price)
+    Log:Debug("SubsequentGatePricePower %f", price)
     price = math.ceil(price)
 
     if not confirm or confirm ~= "confirm" then
@@ -196,13 +218,10 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         if Galaxy():sectorLoaded(tx, ty) then
             invokeSectorFunction(tx, ty, true, "gatefounder.lua", "foundGate", buyer.index, x, y)
         else -- save data so the gate back will be spawned once someone will enter that sector
-            local gatesInfo = server:getValue("gate_founder_"..tx.."_"..ty)
-            if gatesInfo then
-                gatesInfo = gatesInfo..";"..buyer.index..","..x..","..y
-            else
-                gatesInfo = buyer.index..","..x..","..y
+            local status = Galaxy():invokeFunction("gatefounder.lua", "todo", 1, tx, ty, buyer.index, x, y)
+            if status ~= 0 then
+                Log:Error("gatefounder.lua - failed to mark gate for creation: %i", status)
             end
-            server:setValue("gate_founder_"..tx.."_"..ty, gatesInfo)
         end
         player:sendChatMessage("Server"%_t, 0, "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."%_t, x, y, tx, ty)
     end

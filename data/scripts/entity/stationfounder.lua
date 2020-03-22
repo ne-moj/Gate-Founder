@@ -66,61 +66,6 @@ function StationFounder.onShowWindow(optionIndex)
     invokeServerFunction("gateFounder_sendSettings")
 end
 
-function StationFounder.buildMiscStationGui(tab)
-    -- make levels a table with key == value
-
-    -- create background
-    local frame = tab:createScrollFrame(Rect(vec2(), tab.size))
-    frame.scrollSpeed = 40
-    frame.paddingBottom = 17
-
-    local count = 0
-    for index, station in pairs(StationFounder.stations) do
-
-        local stationName = station.name
-
-        local padding = 10
-        local height = 30
-        local width = frame.size.x - padding * 4
-
-        local lower = vec2(padding, padding + ((height + padding) * count))
-        local upper = lower + vec2(width, height)
-
-        local rect = Rect(lower, upper)
-
-        local vsplit = UIVerticalSplitter(rect, 10, 0, 0.8)
-        vsplit.rightSize = 100
-
-        local button = frame:createButton(vsplit.right, "Transform"%_t, "onFoundStationButtonPress")
-        button.textSize = 16
-        button.bold = false
-
-        frame:createFrame(vsplit.left)
-
-        vsplit = UIVerticalSplitter(vsplit.left, 10, 7, 0.7)
-
-        local label = frame:createLabel(vsplit.left.lower, stationName, 14)
-        label.size = vec2(vsplit.left.size.x, vsplit.left.size.y)
-        label:setLeftAligned()
-
-        label.tooltip = station.tooltip or ""
-
-        local label
-        if station.isGateFounder then
-            label = frame:createLabel(vsplit.right.lower, "", 14) -- no price for Gate
-        else
-            local costs = StationFounder.getStationCost(station)
-            label = frame:createLabel(vsplit.right.lower, createMonetaryString(costs) .. " Cr"%_t, 14)
-        end
-        label.size = vec2(vsplit.right.size.x, vsplit.right.size.y)
-        label:setRightAligned()
-
-        StationFounder.stationsByButton[button.index] = index
-
-        count = count + 1
-    end
-end
-
 local gateFounder_onFoundStationButtonPress = StationFounder.onFoundStationButtonPress
 function StationFounder.onFoundStationButtonPress(button)
     local selectedStation = StationFounder.stationsByButton[button.index]

@@ -22,7 +22,12 @@ local configOptions = {
   UseStationFounderShip = { default = true, comment = "If true, in order to found gates you'll need to build station founder ship on any shipyard." },
   ShouldOwnOriginSector = { default = false, comment = "If true, faction can found a gate only if it owns current sector." },
   ShouldOwnDestinationSector = { default = false, comment = "If true, faction can found a gate only if it owns destinaton sector." },
-  AllowGatesToCenter = { default = false, comment = "If true, it's possible to build gates to/from center of a galaxy (0:0)." }
+  AllowGatesToCenter = { default = false, comment = "If true, it's possible to build gates to/from center of a galaxy (0:0)." },
+  NeedHelpFromDestinationSector = { default = false, comment = "If true, players will need to have a ship/station (theirs or alliance) in a destination sector to help them build a gate." },
+  ForbidGatesForEnemies = { default = true, comment = "If true, if a ship player/alliance faction is at war with the gate owner faction, they will not be able to pass." },
+  BuiltGatesCanBeCaptured = { default = true, comment = "If false, gates built by players/alliances will not be captured by NPC and other players/alliances." },
+  CapturedBuiltGatesCanBeDestroyed = { default = true, comment = "If false, only initial builder of a gate will be able to destroy it." },
+  CapturedNPCGatesCanBeDestroyed = { default = true, comment = "If false, it won't be possible to destroy captured NPC gates." },
 }
 local isModified
 Config, isModified = Azimuth.loadConfig("GateFounder", configOptions)

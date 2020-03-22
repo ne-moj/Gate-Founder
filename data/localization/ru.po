@@ -12,16 +12,24 @@ msgstr "Достигнуто максимальное количество вр�
 
 # ========== data\scripts\entity\gate.lua ==========
 #: data\scripts\entity\gate.lua:
-msgid "'%s' - paid %i credits gate passage fee."
-msgstr "'%s' - заплачено %i кредитов за проход через врата."
+msgid "Access denied, we will not allow our enemies to pass through our gate!"
+msgstr "Доступ запрещен, мы не позволим врагам использовать наши врата!"
 
 #: data\scripts\entity\gate.lua:
-msgid "Paid %1% credits gate passage fee."
-msgstr "Заплачено %1% кредитов за проход через врата."
+msgid "Can't toggle the gate, this sector is being controlled by a non-ally faction!"
+msgstr "Невозможно переключить врата, этот сектор контролируется не нами или нашими союзниками!"
 
 #: data\scripts\entity\gate.lua:
-msgid "Toggle"
-msgstr "Переключить"
+msgid "Can't destroy the gate, this sector is being controlled by a non-ally faction!"
+msgstr "Невозможно уничтожить врата, этот сектор контролируется не нами или нашими союзниками!"
+
+#: data\scripts\entity\gate.lua:
+msgid "Only original builder of the gate can destroy it!"
+msgstr "Только строители врат могут их уничтожить!"
+
+#: data\scripts\entity\gate.lua:
+msgid "This gate was built by an old faction. You have no idea how to destroy it."
+msgstr "Эти врата были построены старой фракцией. У вас нет ни малейшей идеи как их уничтожить."
 
 
 # ========== data\scripts\entity\stationfounder.lua ==========
@@ -97,6 +105,10 @@ msgstr "Только фракция, контролирующая сектор, 
 #: data\scripts\player\gatefounder.lua:
 msgid "Build station founder ships on any shipyard in order to found gates!"
 msgstr "Постройте корабль-строитель станций на любой верфи, чтобы создавать врата!"
+
+#: data\scripts\player\gatefounder.lua:
+msgid "You need to have a ship/station in the target sector to help you build a gate!"
+msgstr "Вам необходима помощь от вашего корабля/станции в выбранном секторе, чтобы построить врата!"
 
 #: data\scripts\player\gatefounder.lua:
 msgid "Gates can't lead to the center of the galaxy!"

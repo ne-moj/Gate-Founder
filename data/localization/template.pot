@@ -12,15 +12,23 @@ msgstr ""
 
 # ========== data\scripts\entity\gate.lua ==========
 #: data\scripts\entity\gate.lua:
-msgid "'%s' - paid %i credits gate passage fee."
+msgid "Access denied, we will not allow our enemies to pass through our gate!"
 msgstr ""
 
 #: data\scripts\entity\gate.lua:
-msgid "Paid %1% credits gate passage fee."
+msgid "Can't toggle the gate, this sector is being controlled by a non-ally faction!"
 msgstr ""
 
 #: data\scripts\entity\gate.lua:
-msgid "Toggle"
+msgid "Can't destroy the gate, this sector is being controlled by a non-ally faction!"
+msgstr ""
+
+#: data\scripts\entity\gate.lua:
+msgid "Only original builder of the gate can destroy it!"
+msgstr ""
+
+#: data\scripts\entity\gate.lua:
+msgid "This gate was built by an old faction. You have no idea how to destroy it."
 msgstr ""
 
 
@@ -96,6 +104,10 @@ msgstr ""
 # ========== data\scripts\player\gatefounder.lua ==========
 #: data\scripts\player\gatefounder.lua:
 msgid "Build station founder ships on any shipyard in order to found gates!"
+msgstr ""
+
+#: data\scripts\player\gatefounder.lua:
+msgid "You need to have a ship/station in the target sector to help you build a gate!"
 msgstr ""
 
 #: data\scripts\player\gatefounder.lua:

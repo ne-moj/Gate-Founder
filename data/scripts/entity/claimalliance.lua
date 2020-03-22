@@ -1,20 +1,17 @@
-local Azimuth, GateFounderConfig -- serverside
-local gatefounder_claim -- extended functions
+local gateFounder_claim -- extended functions
 
 if onServer() then
 
-
-Azimuth, GateFounderConfig = unpack(include("gatefounderinit"))
-
-gatefounder_claim = ClaimFromAlliance.claim
+gateFounder_claim = ClaimFromAlliance.claim
 function ClaimFromAlliance.claim()
-    if not ClaimFromAlliance.interactionPossible(callingPlayer) then return end
-    local faction, ship, player = getInteractingFaction(callingPlayer)
-    if not faction then return end
-
     local entity = Entity()
-
     if entity.hasScript and entity:hasScript("gate.lua") then -- claim both gates at once
+        if not ClaimFromAlliance.interactionPossible(callingPlayer) then return end
+        local faction, ship, player = getInteractingFaction(callingPlayer)
+        if not faction then return end
+
+        local _, GateFounderConfig, GateFounderLog = unpack(include("gatefounderinit"))
+
         if faction.isPlayer and GateFounderConfig.AlliancesOnly then
             player:sendChatMessage("", 1, "Only alliances can claim gates!"%_t)
             return
@@ -31,18 +28,15 @@ function ClaimFromAlliance.claim()
         local tx, ty = wormhole:getTargetCoordinates()
         if Galaxy():sectorLoaded(tx, ty) then
             invokeSectorFunction(tx, ty, true, "gatefounder.lua", "claimGate", faction.index, x, y)
-        else
-            local gatesInfo = Server():getValue("gate_claim_"..tx.."_"..ty)
-            if gatesInfo then
-                gatesInfo = gatesInfo..";"..faction.index..","..x..","..y..","..(wormhole.enabled and "0" or "1")
-            else
-                gatesInfo = faction.index..","..x..","..y..","..(wormhole.enabled and "0" or "1")
+        else -- mark gate to be claimed when the target sector will be loaded
+            local status = Galaxy():invokeFunction("gatefounder.lua", "todo", 2, tx, ty, faction.index, x, y)
+            if status ~= 0 then
+                GateFounderLog:Error("claimalliance.lua - failed to mark gate for claiming: %i", status)
             end
-            Server():setValue("gate_claim_"..tx.."_"..ty, gatesInfo)
         end
     end
 
-    gatefounder_claim() -- resume vanilla
+    gateFounder_claim() -- resume vanilla
 end
 
 
