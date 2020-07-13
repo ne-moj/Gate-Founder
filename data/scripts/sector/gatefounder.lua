@@ -38,16 +38,20 @@ function GateFounder.initialize()
                     Log:Debug("GetValue - spawn a gate %i from (%i:%i) to (%i:%i)", factionIndex, x, y, tx, ty)
                     gateEntities[#gateEntities+1] = GateFounder.foundGate(factionIndex, tx, ty, true)
                 elseif actionType == 2 then -- claim
-                    Log:Debug("GetValue - claim a gate from (%i:%i) to (%i:%i) to faction %i", x, y, tx, ty, factionIndex)
+                    Log:Debug("GetValue - claim a gate from (%i:%i) to (%i:%i) to faction %s", x, y, tx, ty, string.format("%.f", factionIndex))
                     GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
                 elseif actionType == 3 then -- toggle
                     local isEnabled = action[5] == '1'
-                    Log:Debug("GetValue - toggle a gate of faction %i from (%i:%i) to (%i:%i) - %s", factionIndex, x, y, tx, ty, tostring(isEnabled))
+                    Log:Debug("GetValue - toggle a gate of faction %s from (%i:%i) to (%i:%i) - %s", string.format("%.f", factionIndex), x, y, tx, ty, tostring(isEnabled))
                     GateFounder.toggleGate(factionIndex, tx, ty, isEnabled, gateEntities)
                 elseif actionType == 4 then -- destroy
-                    Log:Debug("GetValue - remove a gate of faction %i from (%i:%i) to (%i:%i)", factionIndex, x, y, tx, ty)
+                    Log:Debug("GetValue - remove a gate of faction %s from (%i:%i) to (%i:%i)", string.format("%.f", factionIndex), x, y, tx, ty)
                     local removedKey = GateFounder.destroyGate(factionIndex, tx, ty, gateEntities)
                     gateEntities[removedKey] = nil -- remove gate from the list so we don't check it later
+                elseif actionType == 5 then -- (un)lock
+                    local isLocked = action[5] == '1'
+                    Log:Debug("GetValue - (un)lock a gate of faction %s from (%i:%i) to (%i:%i) - %s", string.format("%.f", factionIndex), x, y, tx, ty, tostring(isLocked))
+                    GateFounder.lockGate(factionIndex, tx, ty, isLocked, gateEntities)
                 end
             end
         end
@@ -59,7 +63,7 @@ function GateFounder.initialize()
 end
 
 function GateFounder.foundGate(factionIndex, tx, ty, notRemote)
-    Log:Debug("Spawn a gate back for faction %i from (%i:%i) to (%i:%i)", factionIndex, x, y, tx, ty)
+    Log:Debug("Spawn a gate back for faction %s from (%i:%i) to (%i:%i)", string.format("%.f", factionIndex), x, y, tx, ty)
     --local faction = Faction(factionIndex)
 
     local desc = EntityDescriptor()
@@ -124,7 +128,7 @@ function GateFounder.foundGate(factionIndex, tx, ty, notRemote)
 end
 
 function GateFounder.destroyGate(factionIndex, tx, ty, gateEntities)
-    Log:Debug("Remove a gate of faction %i from (%i:%i) to (%i:%i)", factionIndex, x, y, tx, ty)
+    Log:Debug("Remove a gate of faction %s from (%i:%i) to (%i:%i)", string.format("%.f", factionIndex), x, y, tx, ty)
     --local faction = Faction(factionIndex)
     --if not faction then return end
     if not gateEntities then
@@ -145,7 +149,7 @@ function GateFounder.destroyGate(factionIndex, tx, ty, gateEntities)
 end
 
 function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
-    Log:Debug("Toggle a gate of faction %i from (%i:%i) to (%i:%i) - %s", factionIndex, x, y, tx, ty, enable)
+    Log:Debug("Toggle a gate of faction %s from (%i:%i) to (%i:%i) - %s", string.format("%.f", factionIndex), x, y, tx, ty, enable)
     --local faction = Faction(factionIndex)
     --if not faction then return end
     if not gateEntities then
@@ -158,11 +162,11 @@ function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
             wh = gate:getWormholeComponent()
             wx, wy = wh:getTargetCoordinates()
             if wx == tx and wy == ty then
-                Log:Debug("Gate found and toggled")
-                wh.enabled = enable
-                status = gate:invokeFunction("gate.lua", "updateTooltip", nil, true) -- Integration: Compass-like Gate Pixel Icons
+                status = gate:invokeFunction("gate.lua", "setPower", enable) -- Integration: Compass-like Gate Pixel Icons
                 if status ~= 0 then
                     Log:Error("toggleGate - status is %s", tostring(status))
+                else
+                    Log:Debug("Gate found and toggled")
                 end
                 return
             end
@@ -171,7 +175,7 @@ function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
 end
 
 function GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
-    Log:Debug("Claim a gate from (%i:%i) to (%i:%i) to faction %i", x, y, tx, ty, factionIndex)
+    Log:Debug("Claim a gate from (%i:%i) to (%i:%i) to faction %s", x, y, tx, ty, string.format("%.f", factionIndex))
     local faction = Faction(factionIndex)
     if not faction then
         Log:Debug("Tried to claim a gate, but faction doesn't exist anymore")
@@ -187,6 +191,27 @@ function GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
         if wx == tx and wy == ty then
             Log:Debug("Gate found and claimed")
             gate.factionIndex = factionIndex
+        end
+    end
+end
+
+function GateFounder.lockGate(factionIndex, tx, ty, lock, gateEntities)
+    Log:Debug("(Un)Lock a gate of faction %s from (%i:%i) to (%i:%i) - %s", string.format("%.f", factionIndex), x, y, tx, ty, lock)
+    if not gateEntities then
+        gateEntities = {sector:getEntitiesByScript("gate.lua")}
+        Log:Debug("(%i:%i) lockGate, gates count: %i", x, y, #gateEntities)
+    end
+    for _, gate in pairs(gateEntities) do
+        local wormhole = gate:getWormholeComponent()
+        local wx, wy = wormhole:getTargetCoordinates()
+        if wx == tx and wy == ty then
+            local status = gate:invokeFunction("gate.lua", "gateFounder_setLock", lock)
+            if status ~= 0 then
+                Log:Error("lockGate - status is %s", tostring(status))
+            else
+                Log:Debug("Gate found and (un)locked")
+            end
+            return
         end
     end
 end

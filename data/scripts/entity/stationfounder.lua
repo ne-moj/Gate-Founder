@@ -3,7 +3,6 @@ local gateFounder_window, gateFounder_xBox, gateFounder_yBox, gateFounder_coords
 local gateFounder_x, gateFounder_y, gateFounder_passageMap -- client
 local GateFounderConfig -- client/server
 local gateFounder_initUI -- overriden functions
-local gateFounder_version = GameVersion() -- client/server
 
 
 StationFounder.stations[#StationFounder.stations+1] = {
@@ -200,7 +199,7 @@ function StationFounder.gateFounder_foundGate(tx, ty)
     local buyer, _, player = getInteractingFaction(callingPlayer, AlliancePrivilege.FoundStations)
     if not buyer then return end
   
-     local status, success = player:invokeFunction("gatefounder.lua", "found", tx, ty, "confirm")
+    local status, success = player:invokeFunction("gatefounder.lua", "found", tx, ty, "confirm")
     if status ~= 0 then
         player:sendChatMessage("", 1, "GateFounder: An error has occured, status: " .. status)
         return

@@ -69,31 +69,62 @@ local function createGates(faction, x, y, tx, ty)
     return Sector():createEntity(desc, EntityArrivalType.Default)
 end
 
-function GateFounder.found(tx, ty, confirm, isCommand)
+function GateFounder.found(tx, ty, confirm, otherFaction, isCommand)
     Log:Debug("Player:GateFounder - found", tx, ty, confirm, isCommand)
     local server = Server()
     local player = Player()
     local isAdmin = server:hasAdminPrivileges(player)
+    local isAdminCommand = isAdmin and confirm and confirm == "cheat"
 
-    if isCommand and Config.UseStationFounderShip and not isAdmin then
-        player:sendChatMessage("", 1, "Build station founder ships on any shipyard in order to found gates!"%_t)
+    if isCommand and Config.UseStationFounderShip and not isAdminCommand then
+        if isAdmin then
+            player:sendChatMessage("", 1, "%1% Or use admin mode: /foundgate x y cheat"%_t, "Build a station founder ship on any shipyard in order to found gates!"%_t)
+        else
+            player:sendChatMessage("", 1, "Build a station founder ship on any shipyard in order to found gates!"%_t)
+        end
         return
     end
 
     local buyer, _, player = getInteractingFaction(player.index, AlliancePrivilege.FoundStations)
+    if isAdminCommand and otherFaction then
+        local otherIndex = tonumber(otherFaction)
+        if otherIndex then -- index
+            buyer = Galaxy():findFaction(otherIndex)
+            if buyer then
+                Log:Debug('Found buyer with index %i - "%s"', otherIndex, tostring(buyer.name or ""))
+            else
+                player:sendChatMessage("", 1, "Couldn't find faction with specified index"%_t)
+                return
+            end
+        else -- name
+            buyer = nil
+            for _, player in pairs({Server():getOnlinePlayers()}) do
+                if player.name == otherFaction then
+                    buyer = player
+                    break
+                end
+            end
+            if buyer then
+                Log:Debug('Found buyer with name "%s" - %i', otherFaction, buyer.index)
+            else
+                player:sendChatMessage("", 1, "Couldn't find online player with that name"%_t)
+                return
+            end
+        end
+    end
     if not buyer then
         Log:Error("Player:GateFounder - buyer is nil")
-        player:sendChatMessage("", 1, "GateFounder: An error has occured")
+        player:sendChatMessage("", 1, "An error has occured"%_t)
         return
     end
 
-    if buyer.isPlayer and Config.AlliancesOnly and not isAdmin then
+    if buyer.isPlayer and Config.AlliancesOnly and not isAdminCommand then
         player:sendChatMessage("", 1, "Only alliances can found gates!"%_t)
         return
     end
 
     local gateCount = buyer:getValue("gates_founded") or 0
-    if gateCount >= Config.MaxGatesPerFaction and not isAdmin then
+    if gateCount >= Config.MaxGatesPerFaction and not isAdminCommand then
         player:sendChatMessage("", 1, "Reached the maximum amount of founded gates!"%_t)
         return
     end
@@ -105,7 +136,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         return
     end
 
-    if Config.NeedHelpFromDestinationSector and not isAdmin then
+    if Config.NeedHelpFromDestinationSector and not isAdminCommand then
         local playerHelp = player:getNamesOfShipsInSector(tx, ty)
         local allianceHelp
         if player.index ~= buyer.index then
@@ -117,25 +148,25 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         end
     end
 
-    if ((x == 0 and y == 0) or (tx == 0 and ty == 0)) and not isAdmin then
+    if ((x == 0 and y == 0) or (tx == 0 and ty == 0)) and not isAdminCommand then
         player:sendChatMessage("", 1, "Gates can't lead to the center of the galaxy!"%_t)
         return
     end
 
     local d = distance(vec2(x, y), vec2(tx, ty))
-    if d > Config.MaxDistance and not isAdmin then
+    if d > Config.MaxDistance and not isAdminCommand then
         player:sendChatMessage("", 1, "Distance between gates is too big!"%_t)
         return
     end
 
     passageMap = PassageMap(server.seed)
-    if not passageMap:passable(tx, ty) and not isAdmin then
+    if not passageMap:passable(tx, ty) and not isAdminCommand then
         player:sendChatMessage("", 1, "Gates can't lead into rifts!"%_t)
         return
     end
 
     local xyInsideRing = passageMap:insideRing(x, y)
-    if xyInsideRing ~= passageMap:insideRing(tx, ty) and not isAdmin then
+    if xyInsideRing ~= passageMap:insideRing(tx, ty) and not isAdminCommand then
         if not Config.AllowToPassBarrier then
             player:sendChatMessage("", 1, "Gates can't cross barrier!"%_t)
             return
@@ -146,7 +177,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
     end
 
     local galaxy = Galaxy()
-    if Config.ShouldOwnOriginSector and not isAdmin then
+    if Config.ShouldOwnOriginSector and not isAdminCommand then
         local owner = galaxy:getControllingFaction(x, y)
         if not owner or owner.index ~= buyer.index then
             player:sendChatMessage("", 1, "Only faction that controls the orign sector can found gates!"%_t)
@@ -154,7 +185,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         end
     end
 
-    if Config.ShouldOwnDestinationSector and not isAdmin then
+    if Config.ShouldOwnDestinationSector and not isAdminCommand then
         local owner = galaxy:getControllingFaction(tx, ty)
         if not owner or owner.index ~= buyer.index then
             player:sendChatMessage("", 1, "Only faction that controls the destination sector can found gates!"%_t)
@@ -167,7 +198,7 @@ function GateFounder.found(tx, ty, confirm, isCommand)
         return
     end
 
-    if confirm and confirm == "confirm" then -- only check when player is ready to pay, otherwise people will use this to search for teleporter sectors
+    if confirm and (confirm == "confirm" or isAdminCommand) then -- only check when player is ready to pay, otherwise people will use this to search for teleporter sectors
         local generatorScript = SectorSpecifics(tx, ty, Server().seed):getScript()
         if string.gsub(generatorScript, "^[^/]+/", "") == "teleporter" then
             player:sendChatMessage("", 1, "It's not possible to build gates from/to teleporter sectors!"%_t)
@@ -200,10 +231,10 @@ function GateFounder.found(tx, ty, confirm, isCommand)
     Log:Debug("SubsequentGatePricePower %f", price)
     price = math.ceil(price)
 
-    if not confirm or confirm ~= "confirm" then
+    if not confirm or (confirm ~= "confirm" and not isAdminCommand) then
         player:sendChatMessage("Server"%_t, 0, "Founding a gate from \\s(%i:%i) to \\s(%i:%i) will cost %i credits. Repeat command with additional 'confirm' in the end to found a gate."%_t, x, y, tx, ty, price)
     else -- try to found a gate
-        if not isAdmin then
+        if not isAdminCommand then
             local canPay, msg, args = buyer:canPay(price)
             if not canPay then
                 player:sendChatMessage("", 1, msg, unpack(args))

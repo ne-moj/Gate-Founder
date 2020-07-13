@@ -1,8 +1,5 @@
 -- using this file to make sure that everything is synced
 
-package.path = package.path .. ";data/scripts/lib/?.lua"
-include("stringutility")
-
 -- namespace GateFounder
 GateFounder = {}
 
@@ -10,16 +7,18 @@ GateFounder = {}
 -- 2 - Claim
 -- 3 - Toggle
 -- 4 - Destroy
+-- 5 - (Un)lock
 function GateFounder.todo(action, targetX, targetY, factionIndex, fromX, fromY, isEnabled)
     local key = 'gateFounder_'..targetX..'_'..targetY
     local value = action..','..factionIndex..','..fromX..','..fromY
     if isEnabled ~= nil then
         value = value..','..(isEnabled and '1' or '0')
     end
-    local curValue = Server():getValue(key)
+    local server = Server()
+    local curValue = server:getValue(key)
     if curValue then
-        Server():setValue(key, curValue..";"..value)
+        server:setValue(key, curValue..";"..value)
     else
-        Server():setValue(key, value)
+        server:setValue(key, value)
     end
 end

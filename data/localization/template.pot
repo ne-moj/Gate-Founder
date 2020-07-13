@@ -1,136 +1,213 @@
-# ========== data\scripts\entity\claimalliance.lua ==========
-#: data\scripts\entity\claimalliance.lua:
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/claimalliance.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/claimalliance.lua:
 msgid "Only alliances can claim gates!"
 msgstr ""
 
-#: data\scripts\entity\claimalliance.lua:
-#: data\scripts\entity\stationfounder.lua:
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/claimalliance.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Reached the maximum amount of founded gates!"
 msgstr ""
 
 
-# ========== data\scripts\entity\gate.lua ==========
-#: data\scripts\entity\gate.lua:
-msgid "Access denied, we will not allow our enemies to pass through our gate!"
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Manage gates"
 msgstr ""
 
-#: data\scripts\entity\gate.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "This will destroy this pair of gates. Are you sure?"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "<%1%> Access denied, we will not allow our enemies to pass through our gate!"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "You don't have permissions to manage this pair of gates."
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "[The gates were locked by an admin]\n"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Choose an action:"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "\n* Toggling gates off will prevent them from transporting ships"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Toggle off"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Toggle on"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "admin"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "\n* Destroying gates will delete them but won't return resources"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "\n* Locking gates will prevent them from being toggled or destroyed by owners"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Unlock"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Lock"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "An error has occured"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
 msgid "Can't toggle the gate, this sector is being controlled by a non-ally faction!"
 msgstr ""
 
-#: data\scripts\entity\gate.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
 msgid "Can't destroy the gate, this sector is being controlled by a non-ally faction!"
 msgstr ""
 
-#: data\scripts\entity\gate.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
 msgid "Only original builder of the gate can destroy it!"
 msgstr ""
 
-#: data\scripts\entity\gate.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
 msgid "This gate was built by an old faction. You have no idea how to destroy it."
 msgstr ""
 
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Gates locked"
+msgstr ""
 
-# ========== data\scripts\entity\stationfounder.lua ==========
-#: data\scripts\entity\stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Gates unlocked"
+msgstr ""
+
+
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 msgid "Gate"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 msgid "Create a gate that will allow ships to travel to a paired gate in another sector. You pay only for the first gate in a pair. Second gate will be created automatically."
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 msgid "Transform to Gate"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 msgid "Second gate coordinates"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 msgid "Distance: "
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 msgid "Max distance: "
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Gates can't lead in the same sector!"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Distance between gates is too big!"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Gates can't lead into rifts!"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Gates can't cross barrier!"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Gates that cross barrier need to be built from the inner ring!"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "This sector already has gate that leads in \\s(%i:%i)!"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Only alliances can found gates!"
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 msgid "You don't have permissions to found gates for your alliance."
 msgstr ""
 
-#: data\scripts\entity\stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 msgid "Only faction that controls the sector can found gates!"
 msgstr ""
 
 
-# ========== data\scripts\player\gatefounder.lua ==========
-#: data\scripts\player\gatefounder.lua:
-msgid "Build station founder ships on any shipyard in order to found gates!"
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "%1% Or use admin mode: /foundgate x y cheat"
 msgstr ""
 
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Build a station founder ship on any shipyard in order to found gates!"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Couldn't find faction with specified index"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Couldn't find online player with that name"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "You need to have a ship/station in the target sector to help you build a gate!"
 msgstr ""
 
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Gates can't lead to the center of the galaxy!"
 msgstr ""
 
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Only faction that controls the orign sector can found gates!"
 msgstr ""
 
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Only faction that controls the destination sector can found gates!"
 msgstr ""
 
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "It's not possible to build gates from/to teleporter sectors!"
 msgstr ""
 
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Founding a gate from \\s(%i:%i) to \\s(%i:%i) will cost %i credits. Repeat command with additional 'confirm' in the end to found a gate."
 msgstr ""
 
-#: data\scripts\player\gatefounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."
 msgstr ""
 
