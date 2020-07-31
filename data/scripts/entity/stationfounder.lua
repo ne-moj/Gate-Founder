@@ -2,7 +2,7 @@ local Azimuth, GateFounderConfig -- client/server
 local gateFounder_window, gateFounder_xBox, gateFounder_yBox, gateFounder_coordsLabel, gateFounder_distanceLabel, gateFounder_maxDistanceLabel, gateFounder_priceLabel, gateFounder_foundGateBtn, gateFounder_stationButtons -- UI
 local PassageMap, gateFounder_x, gateFounder_y, gateFounder_passageMap -- client
 local gateFounder_sendStationStyle, gateFounder_foundStation -- extended server functions
-local gateFounder_initUI, gateFounder_updateRedesignButtons, gateFounder_onShowWindow, gateFounder_onFoundStationButtonPress -- extended client functions
+local gateFounder_initUI, gateFounder_updateRedesignButtons, gateFounder_onShowWindow, gateFounder_onCloseWindow, gateFounder_onFoundStationButtonPress -- extended client functions
 
 
 StationFounder.stations[#StationFounder.stations+1] = {
@@ -67,9 +67,16 @@ gateFounder_onShowWindow = StationFounder.onShowWindow
 function StationFounder.onShowWindow(optionIndex)
     if gateFounder_onShowWindow then gateFounder_onShowWindow(optionIndex) end
 
-    if getScriptPath() ~= "data/scripts/entity/stationfounder.lua" then
+    if getScriptPath() == "data/scripts/entity/stationfounder.lua" then
         invokeServerFunction("gateFounder_sendSettings")
     end
+end
+
+gateFounder_onCloseWindow = StationFounder.onCloseWindow
+function StationFounder.onCloseWindow(...)
+    gateFounder_onCloseWindow(...)
+
+    gateFounder_window.visible = false
 end
 
 -- FUNCTIONS --
