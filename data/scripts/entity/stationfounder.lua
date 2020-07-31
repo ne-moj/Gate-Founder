@@ -1,8 +1,8 @@
-local PassageMap, Azimuth -- includes
-local gateFounder_window, gateFounder_xBox, gateFounder_yBox, gateFounder_coordsLabel, gateFounder_distanceLabel, gateFounder_maxDistanceLabel, gateFounder_priceLabel, gateFounder_foundGateBtn -- UI
-local gateFounder_x, gateFounder_y, gateFounder_passageMap -- client
-local GateFounderConfig -- client/server
-local gateFounder_initUI -- overriden functions
+local Azimuth, GateFounderConfig -- client/server
+local gateFounder_window, gateFounder_xBox, gateFounder_yBox, gateFounder_coordsLabel, gateFounder_distanceLabel, gateFounder_maxDistanceLabel, gateFounder_priceLabel, gateFounder_foundGateBtn, gateFounder_stationButtons -- UI
+local PassageMap, gateFounder_x, gateFounder_y, gateFounder_passageMap -- client
+local gateFounder_sendStationStyle, gateFounder_foundStation -- extended server functions
+local gateFounder_initUI, gateFounder_updateRedesignButtons, gateFounder_onShowWindow, gateFounder_onFoundStationButtonPress -- extended client functions
 
 
 StationFounder.stations[#StationFounder.stations+1] = {
@@ -20,9 +20,13 @@ include("azimuthlib-uiproportionalsplitter")
 
 gateFounder_passageMap = PassageMap(Seed(GameSettings().seed))
 
+-- PREDEFINED --
+
 gateFounder_initUI = StationFounder.initUI
 function StationFounder.initUI()
     gateFounder_initUI()
+
+    StationFounder.gateFounder_hideGateButtons()
 
     local res = getResolution()
     local menu = ScriptUI()
@@ -59,13 +63,68 @@ function StationFounder.initUI()
     gateFounder_foundGateBtn.active = false
 end
 
-local gateFounder_onShowWindow = StationFounder.onShowWindow
+gateFounder_onShowWindow = StationFounder.onShowWindow
 function StationFounder.onShowWindow(optionIndex)
     if gateFounder_onShowWindow then gateFounder_onShowWindow(optionIndex) end
-    invokeServerFunction("gateFounder_sendSettings")
+
+    if getScriptPath() ~= "data/scripts/entity/stationfounder.lua" then
+        invokeServerFunction("gateFounder_sendSettings")
+    end
 end
 
-local gateFounder_onFoundStationButtonPress = StationFounder.onFoundStationButtonPress
+-- FUNCTIONS --
+
+gateFounder_updateRedesignButtons = StationFounder.updateRedesignButtons
+function StationFounder.updateRedesignButtons(...)
+    gateFounder_updateRedesignButtons(...)
+
+    StationFounder.gateFounder_hideGateButtons()
+end
+
+function StationFounder.gateFounder_hideGateButtons()
+    if getScriptPath() ~= "data/scripts/entity/stationfounder.lua" then
+        for btnIndex, stationIndex in pairs(StationFounder.stationsByButton) do
+            local template = StationFounder.stations[stationIndex]
+            if template and template.isGateFounder then
+                local btn = UIElement(btnIndex)
+                if valid(btn) then
+                    btn.visible = false
+                end
+            end
+        end
+    end
+end
+
+-- CALLABLE --
+
+function StationFounder.gateFounder_receiveSettings(data, gateCount)
+    data.gateCount = gateCount
+    GateFounderConfig = data
+    if gateFounder_maxDistanceLabel then
+        gateFounder_maxDistanceLabel.caption = "Max distance: "%_t .. data.MaxDistance
+        
+        local isError = false
+        if Entity().playerOwned and data.AlliancesOnly then
+            gateFounder_priceLabel.caption = "Only alliances can found gates!"%_t
+            isError = true
+        elseif gateCount == -1 then
+            gateFounder_priceLabel.caption = "You don't have permissions to found gates for your alliance."%_t
+            isError = true
+        elseif gateCount == -2 then
+            gateFounder_priceLabel.caption = "Only faction that controls the sector can found gates!"%_t
+            isError = true
+        elseif gateCount >= data.MaxGatesPerFaction then
+            gateFounder_priceLabel.caption = "Reached the maximum amount of founded gates!"%_t
+            isError = true
+        end
+        gateFounder_priceLabel.color = isError and ColorRGB(1, 0, 0) or ColorRGB(1, 1, 1)
+        gateFounder_foundGateBtn.active = false
+    end
+end
+
+-- CALLBACKS --
+
+gateFounder_onFoundStationButtonPress = StationFounder.onFoundStationButtonPress
 function StationFounder.onFoundStationButtonPress(button)
     local selectedStation = StationFounder.stationsByButton[button.index]
     local template = StationFounder.stations[selectedStation]
@@ -148,36 +207,42 @@ function StationFounder.gateFounder_onFoundButtonPressed()
     invokeServerFunction("gateFounder_foundGate", gateFounder_x, gateFounder_y)
 end
 
-function StationFounder.gateFounder_receiveSettings(data, gateCount)
-    data.gateCount = gateCount
-    GateFounderConfig = data
-    gateFounder_maxDistanceLabel.caption = "Max distance: "%_t .. data.MaxDistance
-    
-    local isError = false
-    if Entity().playerOwned and data.AlliancesOnly then
-        gateFounder_priceLabel.caption = "Only alliances can found gates!"%_t
-        isError = true
-    elseif gateCount == -1 then
-        gateFounder_priceLabel.caption = "You don't have permissions to found gates for your alliance."%_t
-        isError = true
-    elseif gateCount == -2 then
-        gateFounder_priceLabel.caption = "Only faction that controls the sector can found gates!"%_t
-        isError = true
-    elseif gateCount >= data.MaxGatesPerFaction then
-        gateFounder_priceLabel.caption = "Reached the maximum amount of founded gates!"%_t
-        isError = true
-    end
-    gateFounder_priceLabel.color = isError and ColorRGB(1, 0, 0) or ColorRGB(1, 1, 1)
-    gateFounder_foundGateBtn.active = false
-end
-
 
 else -- onServer
 
 
 Azimuth, GateFounderConfig = unpack(include("gatefounderinit"))
 
+-- CALLABLE --
+
+gateFounder_sendStationStyle = StationFounder.sendStationStyle
+function StationFounder.sendStationStyle(selectedProduction, selectedStation, ...)
+    if selectedStation then
+        local template = StationFounder.stations[selectedStation]
+        if template.isGateFounder then return end -- we have custom function for that
+    end
+
+    gateFounder_sendStationStyle(selectedProduction, selectedStation, ...)
+end
+
+gateFounder_foundStation = StationFounder.foundStation
+function StationFounder.foundStation(selected, ...)
+    if anynils(selected) then return end
+
+    local template = StationFounder.stations[selected]
+    if template == nil then
+        player:sendChatMessage("", 1, "The station you chose doesn't exist."%_t)
+        return
+    end
+
+    if template.isGateFounder then return end -- we have custom function for that
+
+    gateFounder_foundStation(selected, ...)
+end
+
 function StationFounder.gateFounder_sendSettings()
+    if getScriptPath() ~= "data/scripts/entity/stationfounder.lua" then return end
+
     local buyer, _, player, alliance = getInteractingFaction(callingPlayer)
     if alliance and not alliance:hasPrivilege(callingPlayer, AlliancePrivilege.FoundStations) then
         invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig, -1)
@@ -196,6 +261,8 @@ end
 callable(StationFounder, "gateFounder_sendSettings")
 
 function StationFounder.gateFounder_foundGate(tx, ty)
+    if getScriptPath() ~= "data/scripts/entity/stationfounder.lua" then return end
+
     local buyer, _, player = getInteractingFaction(callingPlayer, AlliancePrivilege.FoundStations)
     if not buyer then return end
   
