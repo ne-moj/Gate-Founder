@@ -240,6 +240,7 @@ function GateFounder.found(tx, ty, confirm, otherFaction, isCommand)
                 player:sendChatMessage("", 1, msg, unpack(args))
                 return
             end
+            buyer:pay("Paid %1% Credits to found a gate."%_T, price)
         end
         -- increment gate count and spawn a gate
         buyer:setValue("gates_founded", gateCount + 1)

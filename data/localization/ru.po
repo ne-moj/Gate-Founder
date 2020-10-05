@@ -124,6 +124,19 @@ msgstr "Макс. расстояние: "
 
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Only alliances can found gates!"
+msgstr "Только альянсы могут создавать врата!"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "You don't have permissions to found gates for your alliance."
+msgstr "У вас нет разрешения строить врата от имени альянса."
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "Only faction that controls the sector can found gates!"
+msgstr "Только фракция, контролирующая сектор, может создавать врата!"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Gates can't lead in the same sector!"
 msgstr "Врата не могут вести в этот же сектор!"
 
@@ -151,19 +164,6 @@ msgstr "Врата, пересекающие барьер, могут быть �
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "This sector already has gate that leads in \\s(%i:%i)!"
 msgstr "Этот сектор уже имеет врата, ведущие в \\s(%i:%i)!"
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
-msgid "Only alliances can found gates!"
-msgstr "Только альянсы могут создавать врата!"
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
-msgid "You don't have permissions to found gates for your alliance."
-msgstr "У вас нет разрешения строить врата от имени альянса."
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
-msgid "Only faction that controls the sector can found gates!"
-msgstr "Только фракция, контролирующая сектор, может создавать врата!"
 
 
 # ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua ==========
@@ -206,6 +206,10 @@ msgstr "Невозможно строить врата из/в сектора с
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Founding a gate from \\s(%i:%i) to \\s(%i:%i) will cost %i credits. Repeat command with additional 'confirm' in the end to found a gate."
 msgstr "Создание врат из \\s(%i:%i) в \\s(%i:%i) будет стоить %i кредитов. Повторите команду с добавлением 'confirm' в конце, чтобы создать врата."
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Paid %1% Credits to found a gate."
+msgstr "Уплачено %1% кредитов за создание врат."
 
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."

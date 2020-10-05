@@ -124,6 +124,19 @@ msgstr ""
 
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Only alliances can found gates!"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "You don't have permissions to found gates for your alliance."
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "Only faction that controls the sector can found gates!"
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Gates can't lead in the same sector!"
 msgstr ""
 
@@ -150,19 +163,6 @@ msgstr ""
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "This sector already has gate that leads in \\s(%i:%i)!"
-msgstr ""
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
-msgid "Only alliances can found gates!"
-msgstr ""
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
-msgid "You don't have permissions to found gates for your alliance."
-msgstr ""
-
-#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
-msgid "Only faction that controls the sector can found gates!"
 msgstr ""
 
 
@@ -205,6 +205,10 @@ msgstr ""
 
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
 msgid "Founding a gate from \\s(%i:%i) to \\s(%i:%i) will cost %i credits. Repeat command with additional 'confirm' in the end to found a gate."
+msgstr ""
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Paid %1% Credits to found a gate."
 msgstr ""
 
 #: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
