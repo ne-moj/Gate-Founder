@@ -1,0 +1,218 @@
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/claimalliance.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/claimalliance.lua:
+msgid "Only alliances can claim gates!"
+msgstr "只有同盟才能拥有星门！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/claimalliance.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Reached the maximum amount of founded gates!"
+msgstr "已达到创建星门的最大数量！"
+
+
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Manage gates"
+msgstr "星门管理"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "This will destroy this pair of gates. Are you sure?"
+msgstr "这会摧毁这星门。你确定吗？"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "<%1%> Access denied, we will not allow our enemies to pass through our gate!"
+msgstr "<%1%>拒绝访问，敌人没有理由使用我们的星门！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "You don't have permissions to manage this pair of gates."
+msgstr "你无权管理该星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "[The gates were locked by an admin]\n"
+msgstr "[该星门被宇宙观察者锁住了]\n"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Choose an action:"
+msgstr "你的选择:"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "\n* Toggling gates off will prevent them from transporting ships"
+msgstr "\n* 关闭星门将阻止飞船使用星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Toggle off"
+msgstr "关闭"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Toggle on"
+msgstr "打开"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "admin"
+msgstr "宇宙观察者"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "\n* Destroying gates will delete them but won't return resources"
+msgstr "\n* 摧毁星门选项会删除星门，但不会返回资源"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "\n* Locking gates will prevent them from being toggled or destroyed by owners"
+msgstr "\n* 上锁的星门将阻止它们被所有者开关或破坏"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Unlock"
+msgstr "解锁"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Lock"
+msgstr "锁住星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "An error has occured"
+msgstr "发生错误"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Can't toggle the gate, this sector is being controlled by a non-ally faction!"
+msgstr "无法开关星门，此区域被非盟友势力控制！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Can't destroy the gate, this sector is being controlled by a non-ally faction!"
+msgstr "无法摧毁大门，此区域被非盟友势力控制！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Only original builder of the gate can destroy it!"
+msgstr "只有最初创建者才能摧毁星门！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "This gate was built by an old faction. You have no idea how to destroy it."
+msgstr "这扇星门极其古老，但您不知道如何摧毁它"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Gates locked"
+msgstr "已上锁星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/gate.lua:
+msgid "Gates unlocked"
+msgstr "未上锁星门"
+
+
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "Gate"
+msgstr "星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "Create a gate that will allow ships to travel to a paired gate in another sector. You pay only for the first gate in a pair. Second gate will be created automatically."
+msgstr "创建星门使飞船只可以行驶到另一个扇区中的配对星门，您只需为一对中的第一个星门付费，第二个星门将自动创建"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "Transform to Gate"
+msgstr "转换成星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "Second gate coordinates"
+msgstr "对面星门坐标"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "Distance: "
+msgstr "距离: "
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "Max distance: "
+msgstr "最远距离: "
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Only alliances can found gates!"
+msgstr "只有建立势力才能建立星门！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "You don't have permissions to found gates for your alliance."
+msgstr "您无权建立星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+msgid "Only faction that controls the sector can found gates!"
+msgstr "只有控制了该扇区才能创建星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Gates can't lead in the same sector!"
+msgstr "无法创建相同的星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Distance between gates is too big!"
+msgstr "距离太远！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Gates can't lead into rifts!"
+msgstr "星门无法在裂痕处使用！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Gates can't cross barrier!"
+msgstr "星门不能穿越屏障！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Gates that cross barrier need to be built from the inner ring!"
+msgstr "穿越屏障的星门必须从屏障内部建造！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/entity/stationfounder.lua:
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "This sector already has gate that leads in \\s(%i:%i)!"
+msgstr "该扇区已经有星门在 \\s(%i:%i)!"
+
+
+# ========== C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua ==========
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "%1% Or use admin mode: /foundgate x y cheat"
+msgstr "%1% 或者使用宇宙监视者模式: /foundgate x y cheat"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Build a station founder ship on any shipyard in order to found gates!"
+msgstr "在造船厂建造一个空间站发现者飞船更容易找到星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Couldn't find faction with specified index"
+msgstr "找不到具有指定索引的派系"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Couldn't find online player with that name"
+msgstr "无法找到该名称的玩家"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "You need to have a ship/station in the target sector to help you build a gate!"
+msgstr "你需要有一艘飞船或者空间站在目标扇区去帮助你建造星门！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Gates can't lead to the center of the galaxy!"
+msgstr "星门无法创建于银心"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Only faction that controls the orign sector can found gates!"
+msgstr "只有控制异域的势力才能找到大门！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Only faction that controls the destination sector can found gates!"
+msgstr "只有控制目标扇区的势力才能找到大门！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "It's not possible to build gates from/to teleporter sectors!"
+msgstr "不可能从/到传送者扇区建造星门！"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Founding a gate from \\s(%i:%i) to \\s(%i:%i) will cost %i credits. Repeat command with additional 'confirm' in the end to found a gate."
+msgstr "创建新门从 \\s(%i:%i) 到 \\s(%i:%i) 将花费%i ，重复指令并在后添加'confirm'以创建星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Paid %1% Credits to found a gate."
+msgstr "支付 %1% 以创建星门"
+
+#: C:/Users/WIN 10/AppData/Roaming/Avorion/mods/Gate Founder/data/scripts/player/gatefounder.lua:
+msgid "Successfully founded a gate from \\s(%i:%i) to \\s(%i:%i)."
+msgstr "成功创建星门从 \\s(%i:%i) 到 \\s(%i:%i)"
+
+
