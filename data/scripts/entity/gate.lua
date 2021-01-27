@@ -75,7 +75,7 @@ end
 
 function Gate.updateFaction() -- overridden
     local entity = Entity()
-    local wormhole = entity:getWormholeComponent()
+    local wormhole = WormHole()
     local tx, ty = wormhole:getTargetCoordinates()
     local targetFaction = Galaxy():getControllingFaction(tx, ty)
 
@@ -221,7 +221,7 @@ function Gate.gateFounder_onToggle()
         end
     end
     -- toggle
-    local wormhole = Entity():getWormholeComponent()
+    local wormhole = WormHole()
     local tx, ty = wormhole:getTargetCoordinates()
     local newPower = not Gate.getPower()
     if Galaxy():sectorLoaded(tx, ty) then
@@ -282,7 +282,7 @@ function Gate.gateFounder_onDestroy()
         end
     end
     -- destroy
-    local wormhole = entity:getWormholeComponent()
+    local wormhole = WormHole()
     local tx, ty = wormhole:getTargetCoordinates()
     if Galaxy():sectorLoaded(tx, ty) then
         invokeSectorFunction(tx, ty, true, "gatefounder.lua", "destroyGate", faction.index, x, y)
@@ -317,7 +317,7 @@ function Gate.gateFounder_onLock()
     local isAdmin = Server():hasAdminPrivileges(player)
     if not isAdmin then return end
     local x, y = Sector():getCoordinates()
-    local wormhole = Entity():getWormholeComponent()
+    local wormhole = WormHole()
     local tx, ty = wormhole:getTargetCoordinates()
     local newLocked = not gateFounder_isLocked
     if Galaxy():sectorLoaded(tx, ty) then

@@ -24,7 +24,7 @@ function ClaimFromAlliance.claim()
         faction:setValue("gates_founded", gateCount + 1)
     
         local x, y = Sector():getCoordinates()
-        local wormhole = entity:getWormholeComponent()
+        local wormhole = WormHole()
         local tx, ty = wormhole:getTargetCoordinates()
         if Galaxy():sectorLoaded(tx, ty) then
             invokeSectorFunction(tx, ty, true, "gatefounder.lua", "claimGate", faction.index, x, y)

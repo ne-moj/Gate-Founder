@@ -138,7 +138,7 @@ function GateFounder.destroyGate(factionIndex, tx, ty, gateEntities)
     local wx, wy
     for k, gate in pairs(gateEntities) do
         --if gate.factionIndex == factionIndex then
-            wx, wy = gate:getWormholeComponent():getTargetCoordinates()
+            wx, wy = WormHole(gate):getTargetCoordinates()
             if wx == tx and wy == ty then
                 Log:Debug("Gate found and removed")
                 sector:deleteEntity(gate)
@@ -159,7 +159,7 @@ function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
     local wh, wx, wy, status
     for _, gate in pairs(gateEntities) do
         --if gate.factionIndex == factionIndex then
-            wh = gate:getWormholeComponent()
+            wh = WormHole(gate)
             wx, wy = wh:getTargetCoordinates()
             if wx == tx and wy == ty then
                 status = gate:invokeFunction("gate.lua", "setPower", enable) -- Integration: Compass-like Gate Pixel Icons
@@ -187,7 +187,7 @@ function GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
     end
     local wx, wy
     for k, gate in pairs(gateEntities) do
-        wx, wy = gate:getWormholeComponent():getTargetCoordinates()
+        wx, wy = WormHole(gate):getTargetCoordinates()
         if wx == tx and wy == ty then
             Log:Debug("Gate found and claimed")
             gate.factionIndex = factionIndex
@@ -202,7 +202,7 @@ function GateFounder.lockGate(factionIndex, tx, ty, lock, gateEntities)
         Log:Debug("(%i:%i) lockGate, gates count: %i", x, y, #gateEntities)
     end
     for _, gate in pairs(gateEntities) do
-        local wormhole = gate:getWormholeComponent()
+        local wormhole = WormHole(gate)
         local wx, wy = wormhole:getTargetCoordinates()
         if wx == tx and wy == ty then
             local status = gate:invokeFunction("gate.lua", "gateFounder_setLock", lock)
