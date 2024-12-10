@@ -4,134 +4,130 @@ local gateFounder_interactionPossible, gateFounder_initUI -- extended client fun
 
 
 if onClient() then
+	gateFounder_interactionPossible = Gate.interactionPossible
+	function Gate.interactionPossible(playerIndex, option)
+		if option == 0 then
+			return true
+		end
+		if option then
+			if gateFounder_interactionPossible then
+				return gateFounder_interactionPossible(playerIndex, option)
+			end
+			return false
+		end
+		return true
+	end
 
+	gateFounder_initUI = Gate.initUI
+	function Gate.initUI(...)
+		if gateFounder_initUI then gateFounder_initUI(...) end
 
-gateFounder_interactionPossible = Gate.interactionPossible
-function Gate.interactionPossible(playerIndex, option)
-    if option == 0 then
-        return true
-    end
-    if option then
-        if gateFounder_interactionPossible then
-            return gateFounder_interactionPossible(playerIndex, option)
-        end
-        return false
-    end
-    return true
-end
+		ScriptUI():registerInteraction("Manage gates"%_t, "gateFounder_showManageDialog")
+	end
 
-gateFounder_initUI = Gate.initUI
-function Gate.initUI(...)
-    if gateFounder_initUI then gateFounder_initUI(...) end
-
-    ScriptUI():registerInteraction("Manage gates"%_t, "gateFounder_showManageDialog")
-end
-
-function Gate.gateFounder_onDestroyDialog()
-    ScriptUI():interactShowDialog({
-      text = "This will destroy this pair of gates. Are you sure?"%_t,
-      answers = {
-        { answer = "Cancel"%_t },
-        { answer = "Destroy"%_t, onSelect = "gateFounder_onDestroy" },
-      }
-    })
-end
+	function Gate.gateFounder_onDestroyDialog()
+		ScriptUI():interactShowDialog({
+		  text = "This will destroy this pair of gates. Are you sure?"%_t,
+		  answers = {
+			{ answer = "Cancel"%_t },
+			{ answer = "Destroy"%_t, onSelect = "gateFounder_onDestroy" },
+		  }
+		})
+	end
 
 
 else -- onServer
+	Azimuth, GateFounderConfig, GateFounderLog = unpack(include("gatefounderinit"))
 
+	gateFounder_canTransfer = Gate.canTransfer
+	function Gate.canTransfer(index)
+		if not Gate.getPower() then -- don't allow to pass if gate is toggled off
+			return false
+		end
 
-Azimuth, GateFounderConfig, GateFounderLog = unpack(include("gatefounderinit"))
+		if GateFounderConfig.ForbidGatesForEnemies then
+			local ship = Sector():getEntity(index)
+			local faction = Faction(ship.factionIndex)
+			local selfFaction = Faction()
 
-gateFounder_canTransfer = Gate.canTransfer
-function Gate.canTransfer(index)
-    if not Gate.getPower() then -- don't allow to pass if gate is toggled off
-        return false
-    end
+			if selfFaction and faction and not faction.isAIFaction and selfFaction:getRelationStatus(ship.factionIndex) == RelationStatus.War then
+				local pilotIndex = ship:getPilotIndices()
+				if pilotIndex then
+					local player = Player(pilotIndex)
+					if player then
+						player:sendChatMessage("Gate Control"%_t, ChatMessageType.Error, "<%1%> Access denied, we will not allow our enemies to pass through our gate!"%_t, "Gate Control"%_t)
+					end
+				end
+				return 0
+			end
+		end
 
-    if GateFounderConfig.ForbidGatesForEnemies then
-        local ship = Sector():getEntity(index)
-        local faction = Faction(ship.factionIndex)
-        local selfFaction = Faction()
+		return gateFounder_canTransfer(index)
+	end
 
-        if selfFaction and faction and not faction.isAIFaction and selfFaction:getRelationStatus(ship.factionIndex) == RelationStatus.War then
-            local pilotIndex = ship:getPilotIndices()
-            if pilotIndex then
-                local player = Player(pilotIndex)
-                if player then
-                    player:sendChatMessage("Gate Control"%_t, ChatMessageType.Error, "<%1%> Access denied, we will not allow our enemies to pass through our gate!"%_t, "Gate Control"%_t)
-                end
-            end
-            return 0
-        end
-    end
+	function Gate.isTransferrable() -- gates shouldn't be transferrable
+		return false
+	end
 
-    return gateFounder_canTransfer(index)
-end
+	function Gate.updateFaction() -- overridden
+		local entity = Entity()
+		local wormhole = WormHole()
+		local tx, ty = wormhole:getTargetCoordinates()
+		local targetFaction = Galaxy():getControllingFaction(tx, ty)
 
-function Gate.isTransferrable() -- gates shouldn't be transferrable
-    return false
-end
+		if targetFaction then
+			local origOwner = entity:getValue("gateFounder_origFaction")
+			if origOwner and origOwner ~= targetFaction.index and not GateFounderConfig.BuiltGatesCanBeCaptured then return end
 
-function Gate.updateFaction() -- overridden
-    local entity = Entity()
-    local wormhole = WormHole()
-    local tx, ty = wormhole:getTargetCoordinates()
-    local targetFaction = Galaxy():getControllingFaction(tx, ty)
+			if GateFounderLog.isDebug then
+				local oldIndex = entity.factionIndex
+				if not oldIndex or oldIndex ~= targetFaction.index then
+					GateFounderLog:Debug("gate.lua, updateFaction - now faction %s owns the gate", string.format("%.f", targetFaction.index))
+				end
+			end
+			entity.factionIndex = targetFaction.index
+			Gate.updateTooltip()
+			
+			if not gateFounder_isLocked and targetFaction.isAIFaction and not Gate.getPower() then -- if AI controls both gates, they will toggle them on
+				local x, y = Sector():getCoordinates()
+				local curFaction = Galaxy():getControllingFaction(x, y)
+				if curFaction and curFaction.index == targetFaction.index then
+					if Galaxy():sectorLoaded(tx, ty) then
+						invokeSectorFunction(tx, ty, true, "gatefounder.lua", "toggleGate", targetFaction.index, x, y, true)
+					else
+						local status = Galaxy():invokeFunction("gatefounder.lua", "todo", 3, tx, ty, targetFaction.index, x, y, true)
+						if status ~= 0 then
+							GateFounderLog:Error("gate.lua, updateFaction - failed to mark gate for toggle: %i", status)
+						end
+					end
+					Gate.setPower(true)
+					GateFounderLog:Debug("gate.lua, updateFaction - AI faction toggled gates on")
+				end
+			end
+		end
+	end
 
-    if targetFaction then
-        local origOwner = entity:getValue("gateFounder_origFaction")
-        if origOwner and origOwner ~= targetFaction.index and not GateFounderConfig.BuiltGatesCanBeCaptured then return end
+	gateFounder_secure = Gate.secure
+	function Gate.secure()
+		local data = {}
+		if gateFounder_secure then
+			data = gateFounder_secure()
+		end
+		data.locked = gateFounder_isLocked
+		return data
+	end
 
-        if GateFounderLog.isDebug then
-            local oldIndex = entity.factionIndex
-            if not oldIndex or oldIndex ~= targetFaction.index then
-                GateFounderLog:Debug("gate.lua, updateFaction - now faction %s owns the gate", string.format("%.f", targetFaction.index))
-            end
-        end
-        entity.factionIndex = targetFaction.index
-        Gate.updateTooltip()
-        
-        if not gateFounder_isLocked and targetFaction.isAIFaction and not Gate.getPower() then -- if AI controls both gates, they will toggle them on
-            local x, y = Sector():getCoordinates()
-            local curFaction = Galaxy():getControllingFaction(x, y)
-            if curFaction and curFaction.index == targetFaction.index then
-                if Galaxy():sectorLoaded(tx, ty) then
-                    invokeSectorFunction(tx, ty, true, "gatefounder.lua", "toggleGate", targetFaction.index, x, y, true)
-                else
-                    local status = Galaxy():invokeFunction("gatefounder.lua", "todo", 3, tx, ty, targetFaction.index, x, y, true)
-                    if status ~= 0 then
-                        GateFounderLog:Error("gate.lua, updateFaction - failed to mark gate for toggle: %i", status)
-                    end
-                end
-                Gate.setPower(true)
-                GateFounderLog:Debug("gate.lua, updateFaction - AI faction toggled gates on")
-            end
-        end
-    end
-end
+	gateFounder_restore = Gate.restore
+	function Gate.restore(data)
+		gateFounder_isLocked = data.locked
+		if gateFounder_restore then
+			gateFounder_restore(data)
+		end
+	end
 
-gateFounder_secure = Gate.secure
-function Gate.secure()
-    local data = {}
-    if gateFounder_secure then
-        data = gateFounder_secure()
-    end
-    data.locked = gateFounder_isLocked
-    return data
-end
-
-gateFounder_restore = Gate.restore
-function Gate.restore(data)
-    gateFounder_isLocked = data.locked
-    if gateFounder_restore then
-        gateFounder_restore(data)
-    end
-end
-
-function Gate.gateFounder_setLock(value)
-    gateFounder_isLocked = value
-end
+	function Gate.gateFounder_setLock(value)
+		gateFounder_isLocked = value
+	end
 
 
 end
