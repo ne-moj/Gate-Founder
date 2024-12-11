@@ -4,14 +4,15 @@ if not entity or not ((entity.isDrone or entity.isShip or entity.isStation) and 
 package.path = package.path .. ";data/scripts/lib/?.lua"
 
 include ("callable")
---local TableShow = include ("tableshow")
+include ('closurecolors')
 
 -- Don't remove or alter the following comment, it tells the game the namespace this script lives in. If you remove it, the script will break.
 -- namespace GateSettings
 GateSettings = {}
 
 
--- Load Ini-module --
+-- Load --
+--local TableShow = include ("tableshow")
 local Configs = include ('configs'):new('GateSettings')
 local Logger  = include('logger'):new('GateSettings')
 local cUI     = include('ui')
@@ -27,6 +28,7 @@ local allTabs = nil
 local defaultSettings = {
    paddingInWindow = 10,
    heightRow = 40,
+   widthNumberBox = 60,
    sizeWindow = vec2(1200, 650),
    distance = {min = 1, max = math.floor(1000 * math.sqrt(2)), step = 15},
 }
@@ -220,21 +222,29 @@ function GateSettings.onMaxDistanceBoxChanged (textbox)
     GateSettings._onMaxDistanceChanged(val)
 end
 
-function GateSettings.onClickMaxGatesButtonMinus (textbox)
-	Logger:RunFunc("onClickMaxGatesButtonMinus([textbox]:%s)", textbox)
-	local val = tonumber(activeMenuItems.main.maxGatesBox.text)
-	if val >= 2 then
-		settingsSet.MaxGatesPerFaction = val - 1
+function GateSettings.onClickDistanceButtonMinus ()
+	Logger:RunFunc("onClickDistanceButtonMinus()")
+    GateSettings._onMaxDistanceChanged(settingsSet.MaxDistance - 1)
+end
+
+function GateSettings.onClickDistanceButtonPlus ()
+	Logger:RunFunc("onClickDistanceButtonPlus()")
+    GateSettings._onMaxDistanceChanged(settingsSet.MaxDistance + 1)
+end
+
+function GateSettings.onClickMaxGatesButtonMinus ()
+	Logger:RunFunc("onClickMaxGatesButtonMinus()")
+	if settingsSet.MaxGatesPerFaction >= 2 then
+		settingsSet.MaxGatesPerFaction = settingsSet.MaxGatesPerFaction - 1
 	else
 		settingsSet.MaxGatesPerFaction = 1
 	end
     activeMenuItems.main.maxGatesBox.text = settingsSet.MaxGatesPerFaction
 end
 
-function GateSettings.onClickMaxGatesButtonPlus (textbox)
-	Logger:RunFunc("onClickMaxGatesButtonPlus([textbox]:%s)", textbox)
-	local val = tonumber(activeMenuItems.main.maxGatesBox.text)
-    settingsSet.MaxGatesPerFaction = val + 1
+function GateSettings.onClickMaxGatesButtonPlus ()
+	Logger:RunFunc("onClickMaxGatesButtonPlus()")
+    settingsSet.MaxGatesPerFaction = settingsSet.MaxGatesPerFaction + 1
     activeMenuItems.main.maxGatesBox.text = settingsSet.MaxGatesPerFaction
 end
 
@@ -275,6 +285,7 @@ if onClient() then
 			settingsSet.MaxDistance = defaultSettings.distance.min
 		elseif tonumber(value) < defaultSettings.distance.min then
 			settingsSet.MaxDistance = defaultSettings.distance.min
+			value = tostring(defaultSettings.distance.min)
 		elseif tonumber(value) > defaultSettings.distance.max then
 			settingsSet.MaxDistance = defaultSettings.distance.max
 			value = tostring(defaultSettings.distance.max)
@@ -283,8 +294,10 @@ if onClient() then
 		end
 		
 		if activeMenuItems.main.distanceSlider then
+			local colorSlider = activeMenuItems.main.distanceSliderColorFunction(settingsSet.MaxDistance)
 			activeMenuItems.main.distanceSlider:setValueNoCallback(settingsSet.MaxDistance)
-			activeMenuItems.main.distanceSlider.color = GateSettings._getColorByDistantion(settingsSet.MaxDistance, defaultSettings.distance.max)
+			activeMenuItems.main.distanceSlider.color = colorSlider
+			activeMenuItems.main.distanceSlider.glowColor = colorSlider
 		end
 		
 		if activeMenuItems.main.distanceBox then
@@ -316,7 +329,9 @@ if onClient() then
 		local distanceTextBoxUI  = cUI:new('distanceTextBox')
 		local distanceSliderUI   = cUI:new('distanceSlider')
 		local distanceBGSliderUI = cUI:new('distanceBackgroundIconSlider')
-		local distanceBoxUI      = cUI:new('distanceBox')
+		local distanceButtonMinusUI = cUI:new('distanceButtonMinus')
+		local distanceBoxUI         = cUI:new('distanceBox')
+		local distanceButtonPlusUI  = cUI:new('distanceButtonPlus')
 		
 		distanceIconUI:updateSize(defaultSettings.heightRow, defaultSettings.heightRow)
 		distanceIconUI:updatePadding(defaultSettings.paddingInWindow)
@@ -327,11 +342,23 @@ if onClient() then
 		distanceTextBoxUI:updatePadding({left = 0, top = defaultSettings.paddingInWindow + additionalPaddingForText, bottom = defaultSettings.paddingInWindow + additionalPaddingForText, right = 0})
 		distanceTextBoxUI:updatePosition(distanceIconUI:getPositions().topRight, nil)
 		
-		distanceBoxUI:updateSize(100, defaultSettings.heightRow)
-		distanceBoxUI:updatePadding(defaultSettings.paddingInWindow)
-		distanceBoxUI:updatePosition(distanceTextBoxUI:getPositions().topRight, nil)
 		
-		local postionBox = distanceBoxUI:getPositions()
+		-- Minus button --
+		distanceButtonMinusUI:updateSize(defaultSettings.heightRow - 10, defaultSettings.heightRow - 10)
+		distanceButtonMinusUI:updatePadding({left = defaultSettings.paddingInWindow, top = defaultSettings.paddingInWindow + 5, bottom = defaultSettings.paddingInWindow + 5, right = 5})
+		distanceButtonMinusUI:updatePosition(distanceTextBoxUI:getPositions().topRight)
+		
+		-- box --
+		distanceBoxUI:updateSize(defaultSettings.widthNumberBox, defaultSettings.heightRow)
+		distanceBoxUI:updatePadding({left = 5, top = defaultSettings.paddingInWindow, bottom = defaultSettings.paddingInWindow, right = 5})
+		distanceBoxUI:updatePosition(distanceButtonMinusUI:getPositions().topRight)
+		
+		-- Plus button --
+		distanceButtonPlusUI:updateSize(defaultSettings.heightRow - 10, defaultSettings.heightRow - 10)
+		distanceButtonPlusUI:updatePadding({left = 5, top = defaultSettings.paddingInWindow + 5, bottom = defaultSettings.paddingInWindow + 5, right = defaultSettings.paddingInWindow})
+		distanceButtonPlusUI:updatePosition(distanceBoxUI:getPositions().topRight)
+		
+		local postionBox = distanceButtonPlusUI:getPositions()
 		distanceSliderUI:updatePosition(postionBox.topRight, vec2(allTabs.main.rect.size.x, distanceBoxUI:getPositions().bottomRight.y))
 		distanceSliderUI:updatePadding(defaultSettings.paddingInWindow)
 		distanceBGSliderUI:updatePosition(postionBox.topRight, vec2(allTabs.main.rect.size.x, distanceBoxUI:getPositions().bottomRight.y))
@@ -349,8 +376,10 @@ if onClient() then
 		activeMenuItems.main.distanceTextBox.scrollable = false
 		activeMenuItems.main.distanceTextBox.bold = true
 		activeMenuItems.main.distanceTextBox.fontSize = 14
-		--local distanceLabelPosition = vec2(distanceIconUI:getPositions().topRight.x, ((distanceIconUI:getPositions().bottomRight + distanceIconUI:getPositions().topRight - 14) / 2).y)
-		--activeMenuItems.main.distanceTextBox = allTabs.main:createLabel(distanceLabelPosition, "Distance"%_t, 14)
+		
+		-- create Plus, Minus buttons --
+		activeMenuItems.main.maxGatesButtonMinus = allTabs.main:createButton(distanceButtonMinusUI:getRect(), '-', 'onClickDistanceButtonMinus')
+		activeMenuItems.main.maxGatesButtonPlus = allTabs.main:createButton(distanceButtonPlusUI:getRect(), '+', 'onClickDistanceButtonPlus')
 		
 		-- create Box --
 		activeMenuItems.main.distanceBox = allTabs.main:createTextBox(distanceBoxUI:getRect(), "onMaxDistanceBoxChanged")
@@ -359,13 +388,17 @@ if onClient() then
 		
 		-- create Slider --
 		activeMenuItems.main.distanceBackgroundSliderIcon = allTabs.main:createPicture(distanceSliderUI:getRect(), "data/textures/icons/story-mission.png")
-		activeMenuItems.main.distanceBackgroundSliderIcon.color = ColorARGB(0.5, 1, 1, 1)
+		activeMenuItems.main.distanceBackgroundSliderIcon.color = ColorARGB(0.1, 1, 1, 1)
 		activeMenuItems.main.distanceBackgroundSliderIcon.isIcon = true
 		activeMenuItems.main.distanceBackgroundSliderIcon.layer = 1
 		
+		activeMenuItems.main.distanceSliderColorFunction = ClosureColorsByDistantion({'magenta', 'cyan', 'yellow'}, defaultSettings.distance.min, defaultSettings.distance.max, true)
+		local colorSlider = activeMenuItems.main.distanceSliderColorFunction(settingsSet.MaxDistance)
+		
 		activeMenuItems.main.distanceSlider = allTabs.main:createSlider(distanceSliderUI:getRect(), defaultSettings.distance.min, defaultSettings.distance.max, math.floor(defaultSettings.distance.max / defaultSettings.distance.step), "Max Distance"%_t, "onMaxDistanceSliderChanged")
 		activeMenuItems.main.distanceSlider.value = settingsSet.MaxDistance
-		activeMenuItems.main.distanceSlider.color = GateSettings._getColorByDistantion(settingsSet.MaxDistance, defaultSettings.distance.max)
+		activeMenuItems.main.distanceSlider.color = colorSlider
+		activeMenuItems.main.distanceSlider.glowColor = colorSlider
 		activeMenuItems.main.distanceSlider.tooltip = "Set the maximum distance between the gates"%_t
 		activeMenuItems.main.distanceSlider.showCaption = false
 		activeMenuItems.main.distanceSlider.showValue = false
@@ -395,10 +428,10 @@ if onClient() then
 		-- Minus button --
 		maxGatesButtonMinusUI:updateSize(defaultSettings.heightRow - 10, defaultSettings.heightRow - 10)
 		maxGatesButtonMinusUI:updatePadding({left = defaultSettings.paddingInWindow, top = defaultSettings.paddingInWindow + 5, bottom = defaultSettings.paddingInWindow + 5, right = 5})
-		maxGatesButtonMinusUI:updatePosition(distanceBoxUI:getPositions().bottomLeft)
+		maxGatesButtonMinusUI:updatePosition(distanceButtonMinusUI:getPositions().bottomLeft)
 		
 		-- box --
-		maxGatesBoxUI:updateSize(defaultSettings.heightRow * 2, defaultSettings.heightRow)
+		maxGatesBoxUI:updateSize(defaultSettings.widthNumberBox, defaultSettings.heightRow)
 		maxGatesBoxUI:updatePadding({left = 5, top = defaultSettings.paddingInWindow, bottom = defaultSettings.paddingInWindow, right = 5})
 		maxGatesBoxUI:updatePosition(maxGatesButtonMinusUI:getPositions().topRight)
 		
@@ -436,9 +469,11 @@ if onClient() then
 	function GateSettings._populateAccessTab()
 		Logger:RunFunc("_populateAccessTab()")
 		activeMenuItems.access.ownershipCheck = allTabs.access:createCheckBox(Rect(vec2(defaultSettings.paddingInWindow, 10), vec2(400, 30)), "Alliance Ownership Only"%_t, "onAllianceOwnershipChanged")
+		activeMenuItems.access.ownershipCheck.captionLeft = false
 		activeMenuItems.access.ownershipCheck.checked = settingsSet.AlliancesOnly
 
 		activeMenuItems.access.sectorOwnershipCheck = allTabs.access:createCheckBox(Rect(vec2(defaultSettings.paddingInWindow, 50), vec2(400, 70)), "Sector Owner Can Build"%_t, "onSectorOwnerChanged")
+		activeMenuItems.access.sectorOwnershipCheck.captionLeft = false
 		activeMenuItems.access.sectorOwnershipCheck.checked = settingsSet.ShouldOwnDestinationSector
 		
 		activeMenuItems.access.buttonSave = GateSettings._buttonSaveConfigs('access')
@@ -456,22 +491,7 @@ if onClient() then
 		buttonSaveUI:updatePadding(defaultSettings.paddingInWindow)
 		buttonSaveUI:updatePosition(nil, allTabs[kTab].rect.size)
 		
-		return allTabs[kTab]:createButton(buttonSaveUI:getRect(), 'Save Button'%_t, 'onClickSaveButton')
-	end
-
-	function GateSettings._getColorByDistantion(distance, maxDistance)
-		Logger:RunFunc("_getColorByDistantion([distance]:%s, [maxDistance]:%s)", distance, maxDistance)
-		local defaultRed = 0.2
-		local defaultGreen = 0.2
-		local defaultBlue = 0
-		
-		local red = (1 - defaultRed) * ((maxDistance - distance) / maxDistance) + defaultRed
-		local green = (1 - defaultGreen) * (distance / maxDistance) + defaultGreen
-		local blue = (1 - defaultBlue) * ((maxDistance - distance) / maxDistance) + defaultBlue
-		
-		distance = distance == nil and 0 or distance 
-		
-		return ColorRGB(red, green, blue)
+		return allTabs[kTab]:createButton(buttonSaveUI:getRect(), 'Save Settings'%_t, 'onClickSaveButton')
 	end
 	
 	function GateSettings._updateUI ()
@@ -479,7 +499,7 @@ if onClient() then
 		if settingsWindow ~= nil then
 			settingsWindow.caption = "Gete Settings"..(settingsSet.version ~= nil and '. Version: '..tostring(settingsSet.version) or '')
 			activeMenuItems.main.distanceSlider:setValueNoCallback(settingsSet.MaxDistance)
-			activeMenuItems.main.distanceSlider.color = GateSettings._getColorByDistantion(settingsSet.MaxDistance, defaultSettings.distance.max)
+			activeMenuItems.main.distanceSlider.color = activeMenuItems.main.distanceSliderColorFunction(settingsSet.MaxDistance)
 			activeMenuItems.main.distanceBox.text = tostring(settingsSet.MaxDistance)
 			activeMenuItems.main.maxGatesBox.text = tostring(settingsSet.MaxGatesPerFaction)
 			activeMenuItems.access.ownershipCheck.checked = settingsSet.AlliancesOnly
