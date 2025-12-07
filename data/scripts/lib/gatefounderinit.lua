@@ -14,7 +14,7 @@ local configOptions = {
   FileLogLevel = {2, round = -1, min = 0, max = 4, comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug."},
   MaxDistance = {45, round = -1, min = 1, comment = "Max gate distance."},
   BasePriceMultiplier = {15000, min = 1, comment = "Affects basic gate price."},
-  MaxGatesPerFaction = {5, min = 0, format = "floor", comment = "How many gates can each faction found."},
+  MaxGatesPerFaction = {1000, min = 0, format = "floor", comment = "How many gates can each faction found."},
   AlliancesOnly = {false, comment = "If true, only alliances wiil be able to found gates."},
   SubsequentGatePriceMultiplier = {1.1, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula."},
   SubsequentGatePricePower = {1.01, min = 0, comment = "Affects price of all subsequent gates. Look at mod page for formula."},
