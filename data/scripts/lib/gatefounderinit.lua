@@ -9,7 +9,7 @@ Azimuth = include("azimuthlib-basic")
 
 -- load config
 local configOptions = {
-  _version = {"1.3", comment = "Config version. Don't touch."},
+  _version = {"1.4", comment = "Config version. Don't touch."},
   LogLevel = {2, round = -1, min = 0, max = 4, comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug."},
   FileLogLevel = {2, round = -1, min = 0, max = 4, comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug."},
   MaxDistance = {45, round = -1, min = 1, comment = "Max gate distance."},
@@ -27,7 +27,12 @@ local configOptions = {
   ForbidGatesForEnemies = {true, comment = "If true, if a ship player/alliance faction is at war with the gate owner faction, they will not be able to pass."},
   BuiltGatesCanBeCaptured = {true, comment = "If false, gates built by players/alliances will not be captured by NPC and other players/alliances."},
   CapturedBuiltGatesCanBeDestroyed = {true, comment = "If false, only initial builder of a gate will be able to destroy it."},
-  CapturedNPCGatesCanBeDestroyed = {true, comment = "If false, it won't be possible to destroy captured NPC gates."}
+  CapturedNPCGatesCanBeDestroyed = {true, comment = "If false, it won't be possible to destroy captured NPC gates."},
+  -- New v1.4 settings
+  RefundOnDestroy = {50, min = 0, max = 100, comment = "Percentage of gate cost refunded when destroyed (0-100)."},
+  EnableStatistics = {true, comment = "If true, track gate usage statistics."},
+  CreateCooldown = {0, min = 0, comment = "Cooldown in seconds between creating gates (0 = no cooldown)."},
+  EnableShortAlias = {false, comment = "If true, enable /gf as alias for /gate command."}
 }
 local isModified
 Config, isModified = Azimuth.loadConfig("GateFounder", configOptions)
@@ -48,6 +53,15 @@ if Config._version == "1.2" then
     isModified = true
     Config.MaxDistance = Config.MaxDistance_Post0_26 and Config.MaxDistance_Post0_26 or 45 -- use new 0.26+ distance
     Config.MaxDistance_Post0_26 = nil -- remove old config
+end
+if Config._version == "1.3" then
+    Config._version = "1.4"
+    isModified = true
+    -- New settings with defaults
+    Config.RefundOnDestroy = 50
+    Config.EnableStatistics = true
+    Config.CreateCooldown = 0
+    Config.EnableShortAlias = false
 end
 if isModified then
     Azimuth.saveConfig("GateFounder", Config, configOptions)

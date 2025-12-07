@@ -1,3 +1,5 @@
+package.path = package.path .. ";data/scripts/lib/?.lua"
+
 function execute(sender, commandName, x, y, confirm, otherFaction)
     local player = Player(sender)
     if not player then

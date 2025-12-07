@@ -23,8 +23,8 @@ function execute(playerIndex, commandName, param)
     print(x, y)
 
 	-- Загрузить данные
-	local loadedData = Ini:loadData("./moddata/gatesettings.ini")
-	print(loadedData.Settings.version)
+	--local loadedData = Ini:loadData("./moddata/gatesettings.ini")
+	--print(loadedData.Settings.version)
 
 
     return 0, "", ""
