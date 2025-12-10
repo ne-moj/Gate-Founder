@@ -9,7 +9,13 @@ local Placer = include("placer")
 local PlanGenerator = include("plangenerator")
 local StyleGenerator = include ("internal/stylegenerator.lua")
 local SectorSpecifics = include("sectorspecifics")
-local Azimuth, Config, Log = unpack(include("gatefounderinit"))
+local GateFounderInit = include("gatefounderinit")
+local Config = GateFounderInit.Config
+local Log = GateFounderInit.Log
+if not Log then
+    print("[GateFounder] WARNING: GateFounderInit.Log is nil! Using fallback logger.")
+    Log = include("logger"):new("GateFounderFallback")
+end
 
 -- namespace GateFounder
 GateFounder = {}

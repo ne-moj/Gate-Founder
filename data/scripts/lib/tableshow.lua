@@ -91,13 +91,30 @@ local function TableShow(t, name, indent)
                cart = cart .. " = {\n"
                -- populate the table that holds the keys
                for k, _ in pairs(value) do table.insert(tkeys, k) end
-               -- sort the keys
-               table.sort(tkeys)
+               -- sort the keys (handle mixed types: numbers first, then strings)
+               table.sort(tkeys, function(a, b)
+                   local ta, tb = type(a), type(b)
+                   if ta ~= tb then
+                       -- numbers come before strings, strings before others
+                       if ta == "number" then return true end
+                       if tb == "number" then return false end
+                       if ta == "string" then return true end
+                       if tb == "string" then return false end
+                       return tostring(a) < tostring(b)
+                   else
+                       -- same type - compare directly (works for numbers and strings)
+                       if ta == "number" or ta == "string" then
+                           return a < b
+                       else
+                           return tostring(a) < tostring(b)
+                       end
+                   end
+               end)
                -- use the keys to retrieve the values in the sorted order
                for _, k in ipairs(tkeys) do
 				  local v = value[k]
                   k = basicSerialize(k)
-                  local fname = string.format("%s[%s]", namename, k)
+                  local fname = string.format("%s[%s]", name, k)
                   field = string.format("[%s]", k)
                   -- three spaces between levels
                   addtocart(v, fname, indent .. "   ", saved, field)

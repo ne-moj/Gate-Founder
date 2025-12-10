@@ -5,7 +5,9 @@ package.path = package.path .. ";data/scripts/lib/?.lua"
 local Placer = include("placer")
 local PlanGenerator = include("plangenerator")
 local StyleGenerator = include ("internal/stylegenerator.lua")
-local Azimuth, Config, Log = unpack(include("gatefounderinit"))
+local GateFounderInit = include("gatefounderinit")
+local Config = GateFounderInit.Config
+local Log = GateFounderInit.Log
 
 -- namespace GateFounder
 GateFounder = {}

@@ -218,7 +218,8 @@ end
 else -- onServer
 
 
-Azimuth, GateFounderConfig = unpack(include("gatefounderinit"))
+local GateFounderInit = include("gatefounderinit")
+local GateFounderConfig = GateFounderInit.Config
 
 -- CALLABLE --
 
@@ -252,18 +253,18 @@ function StationFounder.gateFounder_sendSettings()
 
     local buyer, _, player, alliance = getInteractingFaction(callingPlayer)
     if alliance and not alliance:hasPrivilege(callingPlayer, AlliancePrivilege.FoundStations) then
-        invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig, -1)
+        invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig._data, -1)
         return
     end
     if GateFounderConfig.ShouldOwnOriginSector then
         local x, y = Sector():getCoordinates()
         local owner = Galaxy():getControllingFaction(x, y)
         if not owner or owner.index ~= buyer.index then
-            invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig, -2)
+            invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig._data, -2)
             return
         end
     end
-    invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig, buyer:getValue("gates_founded") or 0)
+    invokeClientFunction(player, "gateFounder_receiveSettings", GateFounderConfig._data, buyer:getValue("gates_founded") or 0)
 end
 callable(StationFounder, "gateFounder_sendSettings")
 

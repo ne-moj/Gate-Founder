@@ -10,7 +10,9 @@ function ClaimFromAlliance.claim()
         local faction, ship, player = getInteractingFaction(callingPlayer)
         if not faction then return end
 
-        local _, GateFounderConfig, GateFounderLog = unpack(include("gatefounderinit"))
+        local GateFounderInit = include("gatefounderinit")
+        local GateFounderConfig = GateFounderInit.Config
+        local GateFounderLog = GateFounderInit.Log
 
         if faction.isPlayer and GateFounderConfig.AlliancesOnly then
             player:sendChatMessage("", 1, "Only alliances can claim gates!"%_t)

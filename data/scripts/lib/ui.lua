@@ -210,4 +210,161 @@ function UI:getRect ()
 	)
 end
 
+--[[
+    Layout Engine: Split a Rect into multiple Rects
+    
+    @param rect Rect - The area to split
+    @param ratios table - List of sizes. 
+           > 0 : Fixed pixels (e.g., 100, 250)
+           == 0: Dynamic "rest" space (shared equally)
+    @param padding number|table - Padding inside each new cell (default 0).
+    @param spacing number - Gap between cells (default 0).
+    
+    @return table - List of Rects
+--]]
+function UI:getRects(rect, ratios, padding, spacing, isVertical)
+    local rects = {}
+    local count = #ratios
+    if count == 0 then return rects end
+    
+    spacing = spacing or 0
+    padding = padding or 0
+    
+    -- Normalize padding to table
+    local p = {left=0, top=0, right=0, bottom=0}
+    if type(padding) == "number" then
+        p = {left=padding, top=padding, right=padding, bottom=padding}
+    elseif type(padding) == "table" then
+        p.left = padding.left or 0
+        p.top = padding.top or 0
+        p.right = padding.right or 0
+        p.bottom = padding.bottom or 0
+    end
+
+    -- Calculate total available size
+    local totalSize = isVertical and rect.height or rect.width
+    
+    -- Calculate fixed used space
+    local fixedUsed = 0
+    local dynamicCount = 0
+    
+    for _, r in ipairs(ratios) do
+        if r > 0 then
+            fixedUsed = fixedUsed + r
+        else
+            dynamicCount = dynamicCount + 1
+        end
+    end
+    
+    -- Add total spacing
+    local totalSpacing = math.max(0, count - 1) * spacing
+    fixedUsed = fixedUsed + totalSpacing
+    
+    -- Calculate dynamic unit size
+    local dynamicUnit = 0
+    if dynamicCount > 0 then
+        local remaining = math.max(0, totalSize - fixedUsed)
+        dynamicUnit = remaining / dynamicCount
+    end
+    
+    -- Generate Rects
+    local currentPos = isVertical and rect.lower.y or rect.lower.x
+    
+    for _, r in ipairs(ratios) do
+        local cellSize = (r > 0) and r or dynamicUnit
+        
+        local cellLower, cellUpper
+        
+        if isVertical then
+            -- Vertical split: width is constant, height changes
+            -- Top-down approach (in Avorion Y increases downwards? No, Y increases UPWARDS usually in math, but UI often differs. 
+            -- In Avorion Rect: lower is bottom-left, upper is top-right usually?
+            -- Let's check Avorion coordinate system.
+            -- ScriptUI: 0,0 is TOP-LEFT. Y increases DOWNWARDS.
+            -- Rect(lower, upper): lower=top-left, upper=bottom-right usually in 2D UI libs?
+            -- Wait, Avorion Rect is usually Rect(vec2(x, y), vec2(w, h))? Or Rect(lower, upper)?
+            -- Avorion Documentation: Rect(lower, upper).
+            -- If 0,0 is top-left, then lower is top-left (min x, min y). Upper is bottom-right (max x, max y).
+            
+            -- Vertical split means splitting efficient HEIGHT.
+            -- Adding to Y.
+            
+            local y1 = currentPos
+            local y2 = currentPos + cellSize
+            
+            -- Apply padding
+            local finalX1 = rect.lower.x + p.left
+            local finalY1 = y1 + p.top
+            local finalX2 = rect.upper.x - p.right
+            local finalY2 = y2 - p.bottom
+            
+            table.insert(rects, Rect(vec2(finalX1, finalY1), vec2(finalX2, finalY2)))
+            
+            currentPos = currentPos + cellSize + spacing
+        else
+            -- Horizontal split: height is constant, width changes
+            -- Adding to X.
+            
+            local x1 = currentPos
+            local x2 = currentPos + cellSize
+            
+            local finalX1 = x1 + p.left
+            local finalY1 = rect.lower.y + p.top
+            local finalX2 = x2 - p.right
+            local finalY2 = rect.upper.y - p.bottom
+            
+            table.insert(rects, Rect(vec2(finalX1, finalY1), vec2(finalX2, finalY2)))
+            
+            currentPos = currentPos + cellSize + spacing
+        end
+    end
+    
+    return rects
+end
+
+function UI:horizontalSplit(rect, ratios, padding, spacing)
+    return self:getRects(rect, ratios, padding, spacing, false)
+end
+
+function UI:verticalSplit(rect, ratios, padding, spacing)
+    return self:getRects(rect, ratios, padding, spacing, true)
+end
+
+--[[
+    Create a Grid of Rects
+    @param rect Rect - Area to fill
+    @param rows number - Number of rows
+    @param cols number - Number of cols
+    @return table - table of Rects (row-major: [row][col])
+--]]
+function UI:grid(rect, rows, cols, padding, spacing)
+    local grid = {}
+    
+    -- Generate row ratios (all dynamic 0)
+    local rowRatios = {}
+    for i=1, rows do table.insert(rowRatios, 0) end
+    
+    -- Generate col ratios
+    local colRatios = {}
+    for i=1, cols do table.insert(colRatios, 0) end
+    
+    -- 1. Split vertically into rows
+    -- Note: We don't apply padding here yet, we pass 0 padding and spacing
+    -- Actually we need spacing between rows
+    spacing = spacing or 0
+    local rowRects = self:verticalSplit(rect, rowRatios, 0, spacing)
+    
+    for r, rowRect in ipairs(rowRects) do
+        grid[r] = {}
+        -- 2. Split each row horizontally into cols
+        -- Apply padding here!
+        local colRects = self:horizontalSplit(rowRect, colRatios, padding, spacing)
+        for c, cellRect in ipairs(colRects) do
+            grid[r][c] = cellRect
+        end
+    end
+    
+    return grid
+end
+
 return UI

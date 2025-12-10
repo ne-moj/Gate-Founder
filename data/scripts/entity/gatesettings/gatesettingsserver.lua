@@ -118,13 +118,13 @@ function GateSettingsServer.saveSettingsInServer(callingPlayer, settings)
     -- Load current settings
     GateSettingsServer._uploadSettings()
     
-    -- Initialize structure if needed
-    _loadedData = _loadedData ~= nil and _loadedData or {}
-    _loadedData.Settings = _loadedData.Settings ~= nil and _loadedData.Settings or {}
-    
     -- Update settings (add/update new params)
+    -- Use Configs:set to ensure validation and correct type handling
     for k, v in pairs(settings) do
-        _loadedData.Settings[k] = v
+        local ok, err = Configs:set(k, v)
+        if not ok then
+            Logger:Error("Failed to set config '%s': %s", tostring(k), tostring(err))
+        end
     end
     
     -- Save to file

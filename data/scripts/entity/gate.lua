@@ -37,7 +37,9 @@ if onClient() then
 
 
 else -- onServer
-	Azimuth, GateFounderConfig, GateFounderLog = unpack(include("gatefounderinit"))
+	local GateFounderInit = include("gatefounderinit")
+	local GateFounderConfig = GateFounderInit.Config
+	local GateFounderLog = GateFounderInit.Log
 
 	gateFounder_canTransfer = Gate.canTransfer
 	function Gate.canTransfer(index)

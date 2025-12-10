@@ -28,6 +28,7 @@ package.path = package.path .. ";data/scripts/lib/?.lua"
 --]]
 
 local Logger = include("logger"):new("GateCommand")
+local GateRegistry = include("gateregistry")
 
 -- Subcommand handlers
 local subcommands = {}
@@ -40,14 +41,14 @@ subcommands.help = function(playerIndex, args)
     local helpText = [[
 Gate Founder Commands:
 
-§cUser Commands:§7
+[User Commands:]
   /gate list              - List your gates
   /gate info <x> <y>      - Get gate information
   /gate create <x> <y>    - Create a new gate pair
   /gate toggle <x> <y>    - Enable/disable your gate
   /gate destroy <x> <y>   - Destroy your gate
 
-§cAdmin Commands:§7
+[Admin Commands:]
   /gate admin list        - List all gates on server
   /gate admin tp <x> <y>  - Teleport to gate location
   /gate admin destroy <x> <y> - Force destroy any gate
@@ -55,7 +56,7 @@ Gate Founder Commands:
   /gate config            - View/modify settings
   /gate config reload     - Reload configuration
 
-§cExamples:§7
+[Examples:]
   /gate create 50 -30           - Show price for gate to (50, -30)
   /gate create 50 -30 confirm   - Create gate (pay and build)
   /gate info 50 -30             - Show gate details
@@ -72,14 +73,75 @@ end
 
 subcommands.list = function(playerIndex, args)
     local player = Player(playerIndex)
-    if not player then
-        return 1, "", "Player not found"
+    if not player then return 1, "", "Player not found" end
+    
+    local showNearest = false
+    local filterOwner = nil -- nil = user, unless --all or specified
+    local filterRadius = nil
+    
+    -- Argument Parsing
+    for i, arg in ipairs(args) do
+        if arg == "--nearest" then
+            showNearest = true
+        elseif arg == "--owner" then
+             local val = args[i+1]
+             if val then filterOwner = tonumber(val) end
+        elseif arg == "--all" then
+             filterOwner = -1 -- Magic value for 'all' (if valid logic below)
+        elseif arg == "--radius" then
+             local val = args[i+1]
+             if val then filterRadius = tonumber(val) end
+        end
     end
     
-    -- TODO: Implement gate list from registry
-    -- For now, placeholder response
-    local msg = "§cYour Gates:§7\n"
-    msg = msg .. "No gates found. Use /gate create <x> <y> to create one.\n"
+    local gates = {}
+    local header = ""
+    
+    if showNearest then
+        -- We need the sector coordinates of the player.
+        local x, y = player:getSectorCoordinates()
+        if not x or not y then
+             return 1, "", "Could not determine your location."
+        end
+        
+        gates = GateRegistry.getNearest(x, y, 10, filterOwner ~= -1 and filterOwner or nil, filterRadius)
+        -- getNearest returns { {gate=..., distSq=...} }
+        -- Flatten for display or handle diff format
+        local flat = {}
+        for _, res in ipairs(gates) do table.insert(flat, res.gate) end
+        gates = flat
+        header = string.format("**Nearest Gates to (%d, %d):**\n", x, y)
+    else
+        -- Default: List owner's gates
+        local targetOwner = filterOwner or player.index
+        if filterOwner == -1 then
+            -- List ALL gates (Admin feature? Or just registry dump?)
+            -- GateRegistry.getAll() returns map, need list.
+            local all = GateRegistry.getAll()
+            for _, g in pairs(all) do
+                 -- Reconstruct x/y if missing (getAll returns map key->data)
+                 -- Logic needed to be consistent.
+                 -- Let's stick to getByOwner for now or generic list.
+                 -- If --all usage is allowed.
+                 -- GateRegistry doesn't have getAllValuesList.
+            end
+            -- Let's ignore --all for user command for now, stick to specific owner or self.
+            targetOwner = player.index -- fallback
+        end
+        
+        gates = GateRegistry.getByOwner(targetOwner)
+        header = string.format("**Gates for Faction %d:**\n", targetOwner)
+    end
+    
+    if #gates == 0 then
+        return 0, "", header .. "No gates found."
+    end
+    
+    local msg = header
+    for _, gate in ipairs(gates) do
+        msg = msg .. string.format("- (%d : %d) -> (%d : %d) [%s]\n", 
+            gate.x, gate.y, gate.linkedTo.x, gate.linkedTo.y, gate.status)
+    end
     
     return 0, "", msg
 end
@@ -97,7 +159,7 @@ subcommands.info = function(playerIndex, args)
     end
     
     -- TODO: Implement gate info lookup
-    local msg = string.format("§cGate Info at (%d, %d):§7\n", x, y)
+    local msg = string.format("**Gate Info at (%d, %d):**\n", x, y)
     msg = msg .. "No gate found at these coordinates.\n"
     
     return 0, "", msg
@@ -193,7 +255,7 @@ subcommands.admin = function(playerIndex, args)
     
     if not adminCmd then
         return 0, "", [[
-§cAdmin Commands:§7
+**Admin Commands:**
   /gate admin list [filter]     - List all gates
   /gate admin tp <x> <y>        - Teleport to gate
   /gate admin destroy <x> <y>   - Force destroy gate
@@ -202,17 +264,49 @@ subcommands.admin = function(playerIndex, args)
     end
     
     if adminCmd == "list" then
-        -- TODO: Implement admin list
-        return 0, "", "§cAll Gates on Server:§7\nNo gates registered yet."
+        if adminArgs[1] == "help" then
+            return 0, "", [[
+**Usage:** /gate admin list [options]
+
+**Options:**
+  --owner <index>    : Filter gates by specific faction/player index.
+  --nearest          : Sort by distance to your current location.
+  --radius <value>   : Filter gates within radius (requires --nearest or implies it).
+  
+**Examples:**
+  /gate admin list                   : List all gates (truncated)
+  /gate admin list --owner 2001      : List gates owned by Alliance 2001
+  /gate admin list --nearest --radius 50 : List gates within 50 units
+]]
+        end
+        
+        local all = GateRegistry.getAll()
+        local count = 0
+        local msg = "**All Gates on Server:**\n"
+        
+        for key, gate in pairs(all) do
+            local gx, gy = key:match("^(-?%d+)_(%-?%d+)$")
+            msg = msg .. string.format("- (%s : %s) [Owner: %d]\n", gx, gy, gate.owner)
+            count = count + 1
+            if count >= 30 then
+                msg = msg .. "... (output truncated)"
+                break
+            end
+        end
+        
+        if count == 0 then
+            msg = msg .. "No gates registered yet."
+        end
+        return 0, "", msg
     elseif adminCmd == "tp" then
         local x = tonumber(adminArgs[1])
         local y = tonumber(adminArgs[2])
         if not x or not y then
             return 1, "", "Usage: /gate admin tp <x> <y>"
         end
-        player:setValue("jump", x .. ":" .. y)
-        player.craft.hyperspaceJumpReached = true
-        return 0, "", string.format("Teleporting to (%d, %d)...", x, y)
+        Sector():transferEntity(player.craft, x, y, SectorChangeType.Jump)
+        -- player.craft.hyperspaceJumpReached = true
+        return 0, "", string.format("Teleporting to (%d, %d)... Please wait", x, y)
     elseif adminCmd == "destroy" then
         local x = tonumber(adminArgs[1])
         local y = tonumber(adminArgs[2])
@@ -249,7 +343,7 @@ subcommands.config = function(playerIndex, args)
     if not key then
         -- Show all config
         return 0, "", [[
-§cGate Configuration:§7
+**Gate Configuration:**
   maxdistance = 500
   maxgates = 5
   refund = 50%
