@@ -119,6 +119,12 @@ function GateFounder.foundGate(factionIndex, tx, ty, notRemote)
     wormhole.passageSize = 50
     wormhole.oneWay = true
 
+    -- GateRegistry Integration
+    local GateRegistry = include("gateregistry")
+    if GateRegistry then
+        GateRegistry.add(x, y, factionIndex, tx, ty)
+    end
+
     if notRemote then
         return sector:createEntity(desc, EntityArrivalType.Default)
     end

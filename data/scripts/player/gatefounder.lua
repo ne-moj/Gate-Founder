@@ -251,6 +251,13 @@ function GateFounder.found(tx, ty, confirm, otherFaction, isCommand)
         -- increment gate count and spawn a gate
         buyer:setValue("gates_founded", gateCount + 1)
         gates[#gates+1] = createGates(buyer, x, y, tx, ty)
+        
+        -- GateRegistry Integration
+        local GateRegistry = include("gateregistry")
+        if GateRegistry then
+            GateRegistry.add(x, y, buyer.index, tx, ty)
+        end
+
         Placer.resolveIntersections(gates)
         -- try to spawn the gate back if target sector is loaded
         if Galaxy():sectorLoaded(tx, ty) then

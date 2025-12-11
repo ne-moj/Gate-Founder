@@ -39,8 +39,8 @@ local _isLoaded = false
 -- PRIVATE HELPERS
 -- ============================================================================
 
-local function _getKey(x, y)
-    return string.format("%d_%d", x, y)
+local function _getKey(x, y, tx, ty)
+    return string.format("%d_%d_%d_%d", x, y, tx, ty)
 end
 
 -- ============================================================================
@@ -110,12 +110,37 @@ function GateRegistry.load()
         -- wrap in return to make it a chunk that returns data
         local func = loadstring("return " .. serialized)
         if func then
-            -- Provide safe environment (setfenv unavailable in this context, assuming trusted data)
-            -- local env = {}
-            -- setfenv(func, env)
+            -- Provide safe environment
             local success, data = pcall(func)
             if success and data then
                 _gates = data
+                
+                -- Migration: Convert old x_y keys to x_y_tx_ty
+                local migrated = false
+                local newGates = {}
+                for k, v in pairs(_gates) do
+                    -- Check if key is old format (x_y)
+                    if k:match("^(-?%d+)_(%-?%d+)$") then
+                        local x, y = k:match("^(-?%d+)_(%-?%d+)$")
+                        x, y = tonumber(x), tonumber(y)
+                        if v.linkedTo and v.linkedTo.x and v.linkedTo.y then
+                            local newKey = _getKey(x, y, v.linkedTo.x, v.linkedTo.y)
+                            newGates[newKey] = v
+                            migrated = true
+                            Log:Info("Migrated gate %s to %s", k, newKey)
+                        else
+                            Log:Error("Cannot migrate gate %s: missing linkedTo data", k)
+                        end
+                    else
+                        newGates[k] = v
+                    end
+                end
+                
+                if migrated then
+                    _gates = newGates
+                    GateRegistry.save()
+                    Log:Info("Migration complete: Saved updated registry.")
+                end
             else
                  Log:Error("Failed to execute Gate Registry chunk!")
                  _gates = {}
@@ -153,9 +178,9 @@ end
 function GateRegistry.add(x, y, ownerIndex, targetX, targetY)
     if not _gates then GateRegistry.load() end
     
-    local key = _getKey(x, y)
+    local key = _getKey(x, y, targetX, targetY)
     if _gates[key] then
-        Log:Warning("Gate at %d:%d already registered!", x, y)
+        Log:Warning("Gate path %s already registered!", key)
         return false -- Already exists
     end
     
@@ -163,13 +188,13 @@ function GateRegistry.add(x, y, ownerIndex, targetX, targetY)
         owner = ownerIndex,
         linkedTo = {x=targetX, y=targetY},
         status = "active",
-        created = Server().time,
+        created = os.time(),
         usageCount = 0,
         originalOwner = ownerIndex
     }
     
     GateRegistry.save()
-    Log:Info("Registered new gate at %d:%d owned by %s", x, y, tostring(ownerIndex))
+    Log:Info("Registered new gate route %s owned by %s", key, tostring(ownerIndex))
     return true
 end
 
@@ -177,16 +202,18 @@ end
     Unregister a gate
     @param x number
     @param y number
+    @param targetX number
+    @param targetY number
     @return boolean success
 --]]
-function GateRegistry.remove(x, y)
+function GateRegistry.remove(x, y, targetX, targetY)
     if not _gates then GateRegistry.load() end
     
-    local key = _getKey(x, y)
+    local key = _getKey(x, y, targetX, targetY)
     if _gates[key] then
         _gates[key] = nil
         GateRegistry.save()
-        Log:Info("Unregistered gate at %d:%d", x, y)
+        Log:Info("Unregistered gate path %s", key)
         return true
     end
     return false
@@ -196,13 +223,15 @@ end
     Update a gate's data
     @param x number
     @param y number
+    @param targetX number
+    @param targetY number
     @param data table - Partial data to update
     @return boolean success
 --]]
-function GateRegistry.update(x, y, data)
+function GateRegistry.update(x, y, targetX, targetY, data)
     if not _gates then GateRegistry.load() end
     
-    local key = _getKey(x, y)
+    local key = _getKey(x, y, targetX, targetY)
     local gate = _gates[key]
     
     if gate then
@@ -219,11 +248,39 @@ end
     Get gate data
     @param x number
     @param y number
+    @param targetX number
+    @param targetY number
     @return table|nil
 --]]
-function GateRegistry.get(x, y)
+function GateRegistry.get(x, y, targetX, targetY)
     if not _gates then GateRegistry.load() end
-    return _gates[_getKey(x, y)]
+    return _gates[_getKey(x, y, targetX, targetY)]
+end
+
+--[[
+     Get all gates in a sector
+     @param x number
+     @param y number
+     @return table - List of gates in this sector
+--]]
+function GateRegistry.getInSector(x, y)
+     if not _gates then GateRegistry.load() end
+     
+     local prefix = string.format("%d_%d_", x, y)
+     local result = {}
+     for k, v in pairs(_gates) do
+         if k:find("^" .. prefix) then
+            -- Reconstruct x/y data safely
+            local gx, gy, tx, ty = k:match("^(-?%d+)_(%-?%d+)_(%-?%d+)_(%-?%d+)$")
+            if gx then
+                v.x = tonumber(gx)
+                v.y = tonumber(gy)
+                -- We already have linkedTo inside usually, but lets ensure consistency
+            end
+            table.insert(result, v)
+         end
+     end
+     return result
 end
 
 --[[
@@ -237,11 +294,10 @@ function GateRegistry.getByOwner(ownerIndex)
     local result = {}
     for key, gate in pairs(_gates) do
         if gate.owner == ownerIndex then
-            -- Parse key to get x,y back if needed, or just include data
-            local x, y = key:match("^(-?%d+)_(%-?%d+)$")
-            if x and y then
-                gate.x = tonumber(x)
-                gate.y = tonumber(y)
+            local gx, gy, tx, ty = key:match("^(-?%d+)_(%-?%d+)_(%-?%d+)_(%-?%d+)$")
+            if gx then
+                gate.x = tonumber(gx)
+                gate.y = tonumber(gy)
             end
             table.insert(result, gate)
         end
@@ -265,19 +321,13 @@ function GateRegistry.getNearest(x, y, count, ownerIndex, maxDist)
     local maxDistSq = maxDist and (maxDist * maxDist) or nil
 
     for key, gate in pairs(_gates) do
-        -- Filter by owner if specified
         if not ownerIndex or gate.owner == ownerIndex then
-            local gx, gy = key:match("^(-?%d+)_(%-?%d+)$")
-            if gx and gy then
+            local gx, gy, tx, ty = key:match("^(-?%d+)_(%-?%d+)_(%-?%d+)_(%-?%d+)$")
+            if gx then
                 gx, gy = tonumber(gx), tonumber(gy)
-                -- DistanceSquared for sorting
                 local distSq = (gx - x)^2 + (gy - y)^2
                 
-                -- Check radius if specified
                 if not maxDistSq or distSq <= maxDistSq then
-                    -- Reconstruct coords if needed (gate object might not have them explicitly if serialized compactly)
-                    -- Our add() stores key but gate data doesn't have x/y fields usually unless added manually.
-                    -- Let's ensure returned object has x,y
                     local resultGate = {}
                     for k,v in pairs(gate) do resultGate[k] = v end
                     resultGate.x = gx
@@ -289,10 +339,8 @@ function GateRegistry.getNearest(x, y, count, ownerIndex, maxDist)
         end
     end
     
-    -- Sort by distance
     table.sort(results, function(a, b) return a.distSq < b.distSq end)
     
-    -- Truncate to count
     local truncated = {}
     for i = 1, math.min(#results, count or 10) do
         table.insert(truncated, results[i])

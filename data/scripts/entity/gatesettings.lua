@@ -3,8 +3,9 @@ if not entity or not ((entity.isDrone or entity.isShip or entity.isStation) and 
 	return
 end
 
-package.path = package.path .. ";data/scripts/lib/?.lua;data/scripts/entity/gatesettings/?.lua"
-local Logger = include("logger"):new("GateSettings:Server")
+package.path = package.path .. ";data/scripts/lib/?.lua"
+-- package.path = package.path .. ";data/scripts/entity/?.lua"
+-- local Logger = include("logger"):new("GateSettings:Server")
 
 --[[
     Gate Settings - Admin Configuration UI
@@ -55,8 +56,8 @@ local Logger = include("logger"):new("GateSettings")
 local cUI = include("ui")
 
 -- Load modules
-local GateSettingsServer = include("gatesettingsserver")
-local GateSettingsClient = include("gatesettingsclient")
+local GateSettingsServer = include("gatesettings/server.lua")
+local GateSettingsClient = include("gatesettings/client.lua")
 
 Logger:Debug("Modules loaded: Server=%s, Client=%s", tostring(GateSettingsServer ~= nil), tostring(GateSettingsClient ~= nil))
 

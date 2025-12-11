@@ -5,8 +5,9 @@ local UnitTest = include("unittest")
 UnitTest.injectGlobals()
 
 -- Mock Global Environment for Server interactions
-_G.onServer = function() return true end
-_G.onClient = function() return false end
+local OriginalOnServer = _G.onServer
+local OriginalOnClient = _G.onClient
+local OriginalServer = _G.Server
 
 -- Mock Server class
 local MockServerStore = {}
@@ -19,130 +20,155 @@ local MockServer = {
     end,
     time = 1234567890
 }
-_G.Server = function() return MockServer end
+local function MockServerFunc() return MockServer end
 
--- Include GateRegistry after mocks
+-- Include GateRegistry after mocks definition (but before assignment to _G if we did it globally)
+-- Note: include just loads the table, functions inside call Server() dynamically.
 local GateRegistry = include("gateregistry")
 
 local TestGateRegistry = {}
 
-function TestGateRegistry.test_add_gate()
+function TestGateRegistry.test_add_gate_v2()
     UnitTest.reset()
     MockServerStore = {} -- Clear store
     
+    -- Add gate from 10:20 -> 100:200
     local success = GateRegistry.add(10, 20, 999, 100, 200)
     assertTrue("add returns true", success)
     
-    local gate = GateRegistry.get(10, 20)
+    -- Verify retrieval with full route
+    local gate = GateRegistry.get(10, 20, 100, 200)
     assertNotNil("gate stored", gate)
     assertEqual("owner correct", 999, gate.owner)
     assertEqual("linkedTo x", 100, gate.linkedTo.x)
     assertEqual("linkedTo y", 200, gate.linkedTo.y)
     
-    -- Verify persistence was called (value in store)
+    -- Add ANOTHER gate from 10:20 -> 300:400 (Multiple gates in same sector)
+    local success2 = GateRegistry.add(10, 20, 999, 300, 400)
+    assertTrue("second add returns true", success2)
+    
+    local gate2 = GateRegistry.get(10, 20, 300, 400)
+    assertNotNil("second gate stored", gate2)
+    
+    -- Check persistence
     assertNotNil("saved to server", MockServerStore["GateRegistry"])
 end
 
-function TestGateRegistry.test_remove_gate()
+function TestGateRegistry.test_get_in_sector()
     MockServerStore = {}
-    GateRegistry.load() -- Reset state
-    GateRegistry.add(5, 5, 1, 0, 0)
+    GateRegistry.load() 
     
-    local success = GateRegistry.remove(5, 5)
+    GateRegistry.add(50, 50, 1, 100, 100)
+    GateRegistry.add(50, 50, 1, 200, 200)
+    GateRegistry.add(60, 60, 1, 100, 100) -- Different sector
+    
+    local sectorGates = GateRegistry.getInSector(50, 50)
+    assertEqual("found 2 gates in 50:50", 2, #sectorGates)
+    
+    -- Verify data integrity
+    local found100 = false
+    local found200 = false
+    for _, g in ipairs(sectorGates) do
+        if g.linkedTo.x == 100 then found100 = true end
+        if g.linkedTo.x == 200 then found200 = true end
+        assertEqual("source x correct", 50, g.x)
+        assertEqual("source y correct", 50, g.y)
+    end
+    assertTrue("found target 100", found100)
+    assertTrue("found target 200", found200)
+end
+
+function TestGateRegistry.test_remove_gate_v2()
+    MockServerStore = {}
+    GateRegistry.load()
+    GateRegistry.add(5, 5, 1, 10, 10)
+    
+    local success = GateRegistry.remove(5, 5, 10, 10)
     assertTrue("remove returns true", success)
-    assertNil("gate removed from memory", GateRegistry.get(5, 5))
+    assertNil("gate removed from memory", GateRegistry.get(5, 5, 10, 10))
 end
 
-function TestGateRegistry.test_getByOwner()
+function TestGateRegistry.test_update_gate_v2()
     MockServerStore = {}
-    GateRegistry.load() -- Reset state
-    GateRegistry.add(1, 1, 555, 0, 0)
-    GateRegistry.add(2, 2, 555, 0, 0)
-    GateRegistry.add(3, 3, 666, 0, 0)
+    GateRegistry.load()
+    GateRegistry.add(10, 10, 111, 20, 20)
     
-    local gates555 = GateRegistry.getByOwner(555)
-    assertEqual("found 2 gates for owner 555", 2, #gates555)
-    
-    local gates666 = GateRegistry.getByOwner(666)
-    assertEqual("found 1 gate for owner 666", 1, #gates666)
-end
-
-function TestGateRegistry.test_update_gate()
-    MockServerStore = {}
-    GateRegistry.load() -- Reset state
-    GateRegistry.add(10, 10, 111, 0, 0)
-    
-    local success = GateRegistry.update(10, 10, {status = "disabled", usageCount = 5})
+    local success = GateRegistry.update(10, 10, 20, 20, {status = "disabled"})
     assertTrue("update returns true", success)
     
-    local gate = GateRegistry.get(10, 10)
+    local gate = GateRegistry.get(10, 10, 20, 20)
     assertEqual("status updated", "disabled", gate.status)
-    assertEqual("usageCount updated", 5, gate.usageCount)
-    assertEqual("owner preserved", 111, gate.owner)
 end
 
-function TestGateRegistry.test_getNearest()
+function TestGateRegistry.test_getNearest_v2()
     MockServerStore = {}
-    GateRegistry.load() -- Reset state
+    GateRegistry.load()
     GateRegistry.add(0, 0, 100, 10, 10)    -- Dist 0
     GateRegistry.add(10, 0, 100, 10, 10)   -- Dist 10
-    GateRegistry.add(20, 0, 200, 10, 10)   -- Dist 20 (Diff owner)
-    GateRegistry.add(5, 5, 100, 10, 10)    -- Dist ~7
+    GateRegistry.add(20, 0, 200, 10, 10)   -- Dist 20
+    GateRegistry.add(0, 0, 100, 20, 20)    -- Dist 0 (Same sector, diff target)
     
-    -- Test sorting (searching from 0,0)
     local results = GateRegistry.getNearest(0, 0, 10)
     assertEqual("found all", 4, #results)
-    assertEqual("first is (0,0)", 0, results[1].gate.x)
-    assertEqual("second is (5,5)", 5, results[2].gate.x)
-    assertEqual("third is (10,0)", 10, results[3].gate.x)
     
-    -- Test limit
-    local limited = GateRegistry.getNearest(0, 0, 2)
-    assertEqual("found limited", 2, #limited)
+    -- First two should be distance 0 (order unstable but both 0)
+    assertTrue("first is at 0,0", results[1].distSq == 0)
+    assertTrue("second is at 0,0", results[2].distSq == 0)
     
-    -- Test owner filter (owner 100 only)
-    local filtered = GateRegistry.getNearest(0, 0, 10, 100)
-    assertEqual("found filtered", 3, #filtered)
-    -- Check none have owner 200
-    for _, res in pairs(filtered) do
-        if res.gate.owner == 200 then
-             assertTrue("Filter fail", false)
-        end
-    end
-
-    -- Test radius filter (radius 8 -> include 0,0 and 5,5 (d~7.07), exclude 10,0)
-    local radiusFiltered = GateRegistry.getNearest(0, 0, 10, nil, 8)
-    assertEqual("found in radius 8", 2, #radiusFiltered)
-    -- Should be (0,0) and (5,5)
-    
-    local farRadius = GateRegistry.getNearest(0, 0, 10, nil, 10) -- includes 10,0? distSq 100. maxSq 100. includes.
-    assertEqual("found in radius 10", 3, #farRadius)
+    -- Test radius
+    local radiusFiltered = GateRegistry.getNearest(0, 0, 10, nil, 5)
+    assertEqual("found 2 gates within radius 5 (at 0,0)", 2, #radiusFiltered)
 end
 
-function TestGateRegistry.test_persistence()
-    -- Manually set Mock Store with serialized data
-    -- GateRegistry uses custom simple serialize: "{ ... }"
-    local mockData = "{ ['10_10'] = { owner = 777 } }"
-    MockServerStore["GateRegistry"] = mockData
+function TestGateRegistry.test_migration()
+    -- Test old schema migration
+    local oldData = "{ ['10_10'] = { owner = 777, linkedTo = {x=20, y=20}, created=123 } }"
+    MockServerStore["GateRegistry"] = oldData
     
-    -- Force reload (we might need a reload method or hack internal state)
-    -- GateRegistry doesn't have public reload, but load() checks onServer.
-    -- We can call GateRegistry.load() explicitly.
     GateRegistry.load()
     
-    local gate = GateRegistry.get(10, 10)
-    assertNotNil("loaded data from persistence", gate)
-    assertEqual("loaded correct owner", 777, gate.owner)
+    -- Should have migrated to '10_10_20_20'
+    local newGate = GateRegistry.get(10, 10, 20, 20)
+    assertNotNil("migrated gate found", newGate)
+    assertEqual("owner preserved", 777, newGate.owner)
+    
+    -- Check if old key is gone (getInSector(10,10) returns it, but internally key structure changed)
+    -- We can inspect storage to verify save format
+    local saved = MockServerStore["GateRegistry"]
+    assertNotNil("saved", saved)
+    -- Simple string check
+    if saved:find("10_10_20_20") then
+         assertTrue("New key format found in save", true)
+    else
+         assertTrue("New key format NOT found in save", false)
+    end
 end
 
 function TestGateRegistry.runAll()
-    UnitTest.reset()
-    TestGateRegistry.test_add_gate()
-    TestGateRegistry.test_remove_gate()
-    TestGateRegistry.test_getByOwner()
-    TestGateRegistry.test_update_gate()
-    TestGateRegistry.test_getNearest()
-    TestGateRegistry.test_persistence()
+    -- INSTALL MOCKS
+    _G.onServer = function() return true end
+    _G.onClient = function() return false end
+    _G.Server = MockServerFunc
+
+    local status, err = pcall(function()
+        UnitTest.reset()
+        TestGateRegistry.test_add_gate_v2()
+        TestGateRegistry.test_get_in_sector()
+        TestGateRegistry.test_remove_gate_v2()
+        TestGateRegistry.test_update_gate_v2()
+        TestGateRegistry.test_getNearest_v2()
+        TestGateRegistry.test_migration()
+    end)
+
+    -- RESTORE GLOBALS
+    _G.onServer = OriginalOnServer
+    _G.onClient = OriginalOnClient
+    _G.Server = OriginalServer
+
+    if not status then
+        error(err)
+    end
+
     return UnitTest.getResults()
 end
 

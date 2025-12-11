@@ -48,16 +48,16 @@ end
 local function runModuleTests(moduleName)
     local testFile = testModules[moduleName]
     if not testFile then
-        return nil, string.format("Unknown test module: %s", moduleName)
+        return nil, nil, string.format("Unknown test module: %s", moduleName)
     end
     
     local ok, testModule = pcall(include, testFile)
     if not ok then
-        return nil, string.format("Failed to load %s: %s", testFile, tostring(testModule))
+        return nil, nil, string.format("Failed to load %s: %s", testFile, tostring(testModule))
     end
     
     local results = testModule.runAll()
-    return formatResults(moduleName, results), nil
+    return formatResults(moduleName, results), results, nil
 end
 
 -- Run all tests
@@ -67,17 +67,15 @@ local function runAllTests()
     local totalFailed = 0
     
     for moduleName, _ in pairs(testModules) do
-        local output, err = runModuleTests(moduleName)
+        local output, results, err = runModuleTests(moduleName)
         if err then
             table.insert(allOutput, string.format("[ERROR] %s: %s", moduleName, err))
         else
             table.insert(allOutput, output)
             -- Count totals
-            local ok, testModule = pcall(include, testModules[moduleName])
-            if ok then
-                local results = testModule.getResults()
-                totalPassed = totalPassed + results.passed
-                totalFailed = totalFailed + results.failed
+            if results then
+                totalPassed = totalPassed + (results.passed or 0)
+                totalFailed = totalFailed + (results.failed or 0)
             end
         end
     end
@@ -126,7 +124,7 @@ function execute(sender, commandName, moduleName)
     local output
     
     if moduleName then
-        local result, err = runModuleTests(moduleName)
+        local result, _, err = runModuleTests(moduleName)
         if err then
             return 1, "", err
         end
