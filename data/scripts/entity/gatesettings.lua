@@ -1,12 +1,3 @@
-local entity = Entity()
-if not entity or not ((entity.isDrone or entity.isShip or entity.isStation) and not entity.aiOwned) then
-	return
-end
-
-package.path = package.path .. ";data/scripts/lib/?.lua"
--- package.path = package.path .. ";data/scripts/entity/?.lua"
--- local Logger = include("logger"):new("GateSettings:Server")
-
 --[[
     Gate Settings - Admin Configuration UI
     Author: Sergey Krasovsky, Antigravity
@@ -42,6 +33,13 @@ package.path = package.path .. ";data/scripts/lib/?.lua"
     3. Client modifies settings → Sends to server
     4. Server validates → Saves → Notifies client
 --]]
+local entity = Entity()
+if not entity or not (entity.isDrone or entity.isShip or entity.isStation) or entity.aiOwned then
+	return
+end
+
+package.path = package.path .. ";data/scripts/lib/?.lua"
+package.path = package.path .. ";data/scripts/entity/?.lua"
 
 include("callable")
 include("closurecolors")
@@ -51,13 +49,14 @@ include("closurecolors")
 GateSettings = {}
 
 -- Load libraries first (needed by modules)
-local Configs = include("configs"):new("GateSettings")
 local Logger = include("logger"):new("GateSettings")
 local cUI = include("ui")
 
+local TableShow = include ('tableshow')
+
 -- Load modules
-local GateSettingsServer = include("gatesettings/server.lua")
-local GateSettingsClient = include("gatesettings/client.lua")
+local GateSettingsServer = include("gatesettings/server")
+local GateSettingsClient = include("gatesettings/client")
 
 Logger:Debug("Modules loaded: Server=%s, Client=%s", tostring(GateSettingsServer ~= nil), tostring(GateSettingsClient ~= nil))
 
@@ -72,34 +71,9 @@ local isAdmin = false
 local _loadedData = nil
 
 -- UI elements
-local settingsWindow = nil
 local tabbedWindow = nil
 local allTabs = nil
 
--- Default UI settings
-local defaultSettings = {
-	paddingInWindow = 10,
-	heightRow = 40,
-	widthNumberBox = 60,
-	sizeWindow = vec2(1200, 650),
-	distance = { min = 1, max = math.floor(1000 * math.sqrt(2)), step = 15 },
-}
-
--- Current settings values (synchronized with server)
-local settingsSet = {
-	MaxDistance = 45,
-	MaxGatesPerFaction = 5,
-	AlliancesOnly = false,
-	ShouldOwnOriginSector = false,
-}
-
--- Active UI menu items (references to UI elements)
-local activeMenuItems = {
-	main = {},
-	access = {},
-	price = {},
-	additional = {},
-}
 
 -- ============================================================================
 -- AVORION CALLBACKS
@@ -114,7 +88,13 @@ local activeMenuItems = {
 function GateSettings.initialize()
 	if onClient() then
 		Logger:Debug("Send request to Server - updateSettings()")
+	
 		invokeServerFunction("updateSettings")
+		if onClient() and GateSettingsClient ~= nil then
+			GateSettingsClient.parent = GateSettings
+		elseif onServer() and GateSettingsServer ~= nil then
+			GateSettingsServer.parent = GateSettings
+		end
 	end
 end
 
@@ -155,12 +135,13 @@ end
 --]]
 function GateSettings.initUI()
 	Logger:RunFunc("initUI()")
-	
-	-- Sync settings with client module
-	GateSettingsClient.setSettingsSet(settingsSet)
+	if onClient() then
+		Logger:Debug("Send request to Server - updateSettings()")
+		invokeServerFunction("updateSettings")
+	end
 	
 	-- Create UI via client module
-	settingsWindow = GateSettingsClient.initUI(_loadedData)
+	GateSettingsClient.initUI()
 end
 
 --[[
@@ -228,21 +209,18 @@ end
 --]]
 if onClient() then
 	function GateSettings.updateClientData(settings, youIsAdmin)
-		Logger:RunFunc("updateClientData([settings]:%s, [youIsAdmin]:%s)", settings, youIsAdmin)
+		Logger:RunFunc("updateClientData([settings]:%s, [youIsAdmin]:%s)", TableShow(settings), youIsAdmin)
 		isAdmin = youIsAdmin
 
 		if not settings then
 			return
 		end
-		_loadedData = settings
 
 		if settings.Settings ~= nil then
-			settingsSet = settings.Settings
+			_loadedData = settings.Settings
 			
 			-- Update UI via client module
-			GateSettingsClient.updateUI(settingsSet)
-			
-			Entity():addScript("gatesettings.lua") -- this recall interactionPossible() with update data
+			GateSettingsClient.updateUI(_loadedData)
 		end
 	end
 	callable(GateSettings, "updateClientData")
@@ -259,7 +237,7 @@ end
     - Client: Sends settings to server for saving
     - Server: Validates and saves settings, notifies client of result
     
-    Client call: invokeServerFunction("saveSettingsInServer", settingsSet)
+    Client call: invokeServerFunction("saveSettingsInServer", _loadedData)
     Server response: invokeClientFunction(player, "saveSettingsInServer", {isSave=true/false, errorMessage=...})
     
     @param firstParam table - Settings to save (from client) OR result (from server)
@@ -298,7 +276,7 @@ callable(GateSettings, "saveSettingsInServer")
 function GateSettings.onMaxDistanceSliderChanged(slider)
 	Logger:RunFunc("onMaxDistanceSliderChanged([slider]:%s)", slider)
 	GateSettingsClient.onMaxDistanceChanged(tostring(math.floor(slider.value)))
-	settingsSet = GateSettingsClient.getSettingsSet()
+	_loadedData = GateSettingsClient.getSettingsSet()
 end
 
 function GateSettings.onMaxDistanceBoxChanged(textbox)
@@ -308,21 +286,21 @@ function GateSettings.onMaxDistanceBoxChanged(textbox)
 		val = tostring(val)
 	end
 	GateSettingsClient.onMaxDistanceChanged(val)
-	settingsSet = GateSettingsClient.getSettingsSet()
+	_loadedData = GateSettingsClient.getSettingsSet()
 end
 
 function GateSettings.onClickDistanceButtonMinus()
 	Logger:RunFunc("onClickDistanceButtonMinus()")
 	local currentSettings = GateSettingsClient.getSettingsSet()
 	GateSettingsClient.onMaxDistanceChanged(currentSettings.MaxDistance - 1)
-	settingsSet = GateSettingsClient.getSettingsSet()
+	_loadedData = GateSettingsClient.getSettingsSet()
 end
 
 function GateSettings.onClickDistanceButtonPlus()
 	Logger:RunFunc("onClickDistanceButtonPlus()")
 	local currentSettings = GateSettingsClient.getSettingsSet()
 	GateSettingsClient.onMaxDistanceChanged(currentSettings.MaxDistance + 1)
-	settingsSet = GateSettingsClient.getSettingsSet()
+	_loadedData = GateSettingsClient.getSettingsSet()
 end
 
 function GateSettings.onClickMaxGatesButtonMinus()
@@ -339,7 +317,7 @@ function GateSettings.onClickMaxGatesButtonMinus()
 	if activeMenuItems.main.maxGatesBox then
 		activeMenuItems.main.maxGatesBox.text = currentSettings.MaxGatesPerFaction
 	end
-	settingsSet = currentSettings
+	_loadedData = currentSettings
 end
 
 function GateSettings.onClickMaxGatesButtonPlus()
@@ -352,7 +330,7 @@ function GateSettings.onClickMaxGatesButtonPlus()
 	if activeMenuItems.main.maxGatesBox then
 		activeMenuItems.main.maxGatesBox.text = currentSettings.MaxGatesPerFaction
 	end
-	settingsSet = currentSettings
+	_loadedData = currentSettings
 end
 
 function GateSettings.onMaxGatesChanged(textbox)
@@ -369,31 +347,36 @@ function GateSettings.onMaxGatesChanged(textbox)
 	if activeMenuItems.main.maxGatesBox then
 		activeMenuItems.main.maxGatesBox.text = currentSettings.MaxGatesPerFaction
 	end
-	settingsSet = currentSettings
+	_loadedData = currentSettings
 end
 
-function GateSettings.onOwnershipChanged(checkbox)
-	Logger:RunFunc("onOwnershipChanged([checkbox]:%s)", checkbox)
+function GateSettings.onAlliancesOnlyChanged(checkbox)
+	Logger:RunFunc("onAlliancesOnlyChanged([checkbox]:%s)", checkbox)
 	local currentSettings = GateSettingsClient.getSettingsSet()
 	currentSettings.AlliancesOnly = checkbox.checked
-	settingsSet = currentSettings
+	_loadedData = currentSettings
 end
 
 function GateSettings.onSectorOwnerChanged(checkbox)
 	Logger:RunFunc("onSectorOwnerChanged([checkbox]:%s)", checkbox)
 	local currentSettings = GateSettingsClient.getSettingsSet()
 	currentSettings.ShouldOwnDestinationSector = checkbox.checked
-	settingsSet = currentSettings
+	_loadedData = currentSettings
 end
 
 function GateSettings.onClickSaveButton()
 	Logger:RunFunc("onClickSaveButton()")
-	invokeServerFunction("saveSettingsInServer", settingsSet)
+	invokeServerFunction("saveSettingsInServer", _loadedData)
 	GateSettingsClient.hideWindow()
 end
--- End Events --
+
+function GateSettings.updateSettingsFromServer()
+	Logger:Debug("updateSettingsFromServer()")
+	invokeServerFunction("updateSettings")
+end
 
 -- ============================================================================
 -- NOTE: UI private methods have been moved to gatesettings/client.lua module.
 -- Server private methods have been moved to gatesettings/server.lua module.
 -- ============================================================================
+

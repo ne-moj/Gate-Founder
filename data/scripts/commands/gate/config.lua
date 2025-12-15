@@ -1,3 +1,5 @@
+if onClient() then return end
+
 package.path = package.path .. ";data/scripts/lib/?.lua"
 
 local function config(playerIndex, args)
@@ -17,7 +19,7 @@ local function config(playerIndex, args)
     if not key then
         -- Show all config
         return 0, "", [[
-**Gate Configuration:**
+[Gate Configuration]:
   maxdistance = 500
   maxgates = 5
   refund = 50%

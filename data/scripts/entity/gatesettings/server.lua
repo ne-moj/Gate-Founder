@@ -1,8 +1,3 @@
-package.path = package.path .. ";data/scripts/lib/?.lua"
-
-local Configs = include("configs"):new("GateSettings")
-local Logger = include("logger"):new("GateSettings:Server")
-
 --[[
     Gate Settings - Server Module
     Author: Sergey Krasovsky, Antigravity
@@ -25,7 +20,16 @@ local Logger = include("logger"):new("GateSettings:Server")
     Format: Lua table serialization (see configs.lua)
 --]]
 
+if not onServer() then return end
+
+package.path = package.path .. ";data/scripts/lib/?.lua"
+
+local GateConfig = include("gate/config")
+local Logger = include("logger"):new("GateSettings:Server")
+
 local GateSettingsServer = {}
+-- Link to parent module
+GateSettingsServer.parent = nil
 
 -- Internal state
 local _loadedData = nil
@@ -39,22 +43,11 @@ local _loadedData = nil
 --]]
 function GateSettingsServer._uploadSettings()
     Logger:RunFunc("_uploadSettings()")
+    -- Logger:Debug("GateConfig:_getFilePath(): %s", GateConfig:_getFilePath())
     if _loadedData == nil then
-        _loadedData = Configs:load()
+        _loadedData = { Settings = GateConfig:load() }
     end
     return _loadedData
-end
-
---[[
-    Save settings to file
-    
-    @return boolean - Success status
-    
-    Called by: saveSettingsInServer()
---]]
-function GateSettingsServer._saveSettings()
-    Logger:RunFunc("_saveSettings()")
-    return _loadedData and Configs:save(_loadedData) or ""
 end
 
 --[[
@@ -66,7 +59,7 @@ end
     @param callingPlayer number - Player index (automatic from Avorion)
 --]]
 function GateSettingsServer.updateSettings(callingPlayer)
-    Logger:RunFunc("updateSettings()")
+    Logger:RunFunc("updateSettings([callingPlayer]:%s)", callingPlayer)
     local player = Player(callingPlayer)
     local data = GateSettingsServer._uploadSettings()
     
@@ -119,16 +112,16 @@ function GateSettingsServer.saveSettingsInServer(callingPlayer, settings)
     GateSettingsServer._uploadSettings()
     
     -- Update settings (add/update new params)
-    -- Use Configs:set to ensure validation and correct type handling
+    -- Use GateConfig:set to ensure validation and correct type handling
     for k, v in pairs(settings) do
-        local ok, err = Configs:set(k, v)
+        local ok, err = GateConfig:set(k, v)
         if not ok then
             Logger:Error("Failed to set config '%s': %s", tostring(k), tostring(err))
         end
     end
     
     -- Save to file
-    GateSettingsServer._saveSettings()
+    GateConfig:save()
     
     -- Notify client of success
     invokeClientFunction(player, "saveSettingsInServer", {isSave = true})

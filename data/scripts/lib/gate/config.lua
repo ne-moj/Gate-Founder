@@ -1,35 +1,29 @@
-package.path = package.path .. ";data/scripts/lib/?.lua"
-
 --[[
-    Gate Founder Initialization
+    Gate Config v1.0
     Author: Sergey Krasovsky, Antigravity
     Date: December 2025
     License: MIT
     
     PURPOSE:
-    Initializes Gate Founder mod configuration and logging.
-    Replaces Azimuth dependency with native Configs and Logger modules.
+      This module initializes the configuration settings for the Gate Founder mod,
+      providing a centralized system for managing mod parameters.
     
     USAGE:
-        local GateFounderInit = include("gatefounderinit")
-        local Config = GateFounderInit.Config
-        local Log = GateFounderInit.Log
-        
-        -- Access config values
-        local maxDistance = Config:get("MaxDistance")
-        
-        -- Log messages
-        Log:Info("Gate created at %d, %d", x, y)
+        To access configuration values:
+            local value = GateConfig:get("someSettingName")
+            
+        To set a configuration value:
+            local success, error = GateConfig:set("someSettingName", newValue)
+            
+        To reload the configuration:
+            GateConfig:reload()
 --]]
+package.path = package.path .. ";data/scripts/lib/?.lua"
 
 local Configs = include("configs")
-local Logger = include("logger")
 
 -- Module exports
-local GateFounderInit = {
-    Config = nil,
-    Log = nil
-}
+local GateConfig = {}
 
 -- ============================================================================
 -- CONFIGURATION SCHEMA
@@ -42,18 +36,18 @@ local configSchema = {
         comment = "Config version. Don't touch."
     },
     LogLevel = {
-        default = 2,
+        default = 4,
         type = "number",
         min = 0,
-        max = 4,
-        comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug."
+        max = 5,
+        comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug, 5 - Fun Run."
     },
     FileLogLevel = {
-        default = 2,
+        default = 4,
         type = "number",
         min = 0,
-        max = 4,
-        comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug."
+        max = 5,
+        comment = "0 - Disable, 1 - Errors, 2 - Warnings, 3 - Info, 4 - Debug, 5 - Fun Run."
     },
     MaxDistance = {
         default = 45,
@@ -169,98 +163,65 @@ local configSchema = {
 -- INITIALIZATION
 -- ============================================================================
 
--- ============================================================================
--- INITIALIZATION
--- ============================================================================
-
--- Common Initialization (Client & Server)
--- Create config instance
--- Client uses seed-dependent config name automatically if useSeed=true, but here we want same config?
--- Actually, the server config (moddata/GateFounderV2.lua) is shared/synced? 
--- No, client config is usually separate "moddata/GateFounderV2<seed>.lua".
--- But the schema is the same.
-
 local useSeed = onClient() -- Client uses seed, Server doesn't
-GateFounderInit.Config = Configs("GateFounderV2", {
+GateConfig = Configs("GateFounderV2", {
     useSeed = useSeed,
     schema = configSchema
 })
 
 -- Load config
-local ok, err = GateFounderInit.Config:load()
-if not ok and onServer() then
-    print("[GateFounder] Failed to load config: " .. (err or "unknown error"))
-end
+local ok, err = GateConfig:load()
 
 if onServer() then
-    -- Migration from old versions (Server only)
-    local version = GateFounderInit.Config:get("_version")
+    -- Migration logic
+    local version = GateConfig:get("_version")
     local needsSave = false
     
     if version == "0.0.1" then
-        GateFounderInit.Config:set("_version", "0.1.0")
-        if GateFounderInit.Config:get("MaxGatesPerFaction") == "5" then
-            GateFounderInit.Config:set("MaxGatesPerFaction", 1000)
+        GateConfig:set("_version", "0.1.0")
+        if GateConfig:get("MaxGatesPerFaction") == "5" then
+            GateConfig:set("MaxGatesPerFaction", 1000)
         end
         needsSave = true
         version = "0.1.0"
     end
     
     if needsSave then
-        GateFounderInit.Config:save()
+        GateConfig:save()
     end
-    print("[GateFounder] Initialized with config version " .. (version or "unknown"))
 end
 
--- Create logger with configured log levels
-local logLevel = GateFounderInit.Config:get("LogLevel") or 2
-local fileLogLevel = GateFounderInit.Config:get("FileLogLevel") or 2
-
-print("[GateFounderInit] Initializing Log...")
-GateFounderInit.Log = Logger:new("GateFounder")
-print("[GateFounderInit] Log initialized: " .. tostring(GateFounderInit.Log))
-
--- Map log levels (0-4) to bitmasks
--- 0 = none, 1 = errors, 2 = +warnings, 3 = +info, 4 = +debug
-local levelMasks = {
-    [0] = {},
-    [1] = {'ERROR'},
-    [2] = {'ERROR', 'WARNING'},
-    [3] = {'ERROR', 'WARNING', 'INFO'},
-    [4] = {'ERROR', 'WARNING', 'INFO', 'DEBUG'},
-    [5] = {'ERROR', 'WARNING', 'INFO', 'DEBUG', 'FUN_RUN'}
-}
-
-GateFounderInit.Log.printMask = GateFounderInit.Log:_prepareMask(levelMasks[logLevel] or levelMasks[2])
-GateFounderInit.Log.saveMask = GateFounderInit.Log:_prepareMask(levelMasks[fileLogLevel] or levelMasks[2])
 
 -- ============================================================================
--- HELPER FUNCTIONS
+-- HELPERS
 -- ============================================================================
-
 --[[
-    Get a config value (shortcut)
-    @param key string - Config key
-    @return any - Config value
---]]
-function GateFounderInit.get(key)
-    if GateFounderInit.Config then
-        return GateFounderInit.Config:get(key)
+    @brief Gets a configuration value
+    
+    This function gets a configuration value based on the key.
+    @param key The key of the configuration value.
+    @return The configuration value.
+]]--
+function GateConfig:get(key)
+    if GateConfig then
+        return GateConfig:get(key)
     end
     return nil
 end
 
 --[[
-    Set a config value (shortcut)
-    @param key string - Config key
-    @param value any - New value
-    @return boolean, string - success and error
---]]
-function GateFounderInit.set(key, value)
-    if GateFounderInit.Config then
-        local ok, err = GateFounderInit.Config:set(key, value)
+    @brief Sets a configuration value
+    
+    This function sets a configuration value based on the key.
+    @param key The key of the configuration value.
+    @param value The value to set.
+    @return A tuple (boolean, string) where the boolean indicates success and the string is an error message if validation fails.
+]]--
+function GateConfig:set(key, value)
+    if GateConfig then
+        local ok, err = GateConfig:set(key, value)
         if ok then
-            GateFounderInit.Config:save()
+            GateConfig:save()
         end
         return ok, err
     end
@@ -268,12 +229,14 @@ function GateFounderInit.set(key, value)
 end
 
 --[[
-    Reload config from file
---]]
-function GateFounderInit.reload()
-    if GateFounderInit.Config then
-        GateFounderInit.Config:load()
+    @brief Reloads the configuration
+    
+    This function reloads the configuration from the file.
+]]--
+function GateConfig.reload()
+    if GateConfig then
+        GateConfig:load()
     end
 end
 
-return GateFounderInit
+return GateConfig

@@ -1,3 +1,8 @@
 if onServer() then
-    Player():addScriptOnce("data/scripts/player/gatefounder.lua")
+    local player = Player()
+    local craft = player.craft
+    player:addScriptOnce("data/scripts/lib/gate/service.lua")
+
+    if not craft then return end
+    -- craft:addScriptOnce("data/scripts/player/gatefounder_hotkey.lua")
 end

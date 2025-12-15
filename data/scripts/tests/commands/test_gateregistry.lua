@@ -24,7 +24,7 @@ local function MockServerFunc() return MockServer end
 
 -- Include GateRegistry after mocks definition (but before assignment to _G if we did it globally)
 -- Note: include just loads the table, functions inside call Server() dynamically.
-local GateRegistry = include("gateregistry")
+local GateRegistry = include("gate/registry")
 
 local TestGateRegistry = {}
 

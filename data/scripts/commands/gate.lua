@@ -1,3 +1,5 @@
+if onClient() then return end
+
 package.path = package.path .. ";data/scripts/lib/?.lua"
 package.path = package.path .. ";data/scripts/commands/?.lua"
 
@@ -18,14 +20,15 @@ local Logger = include("logger"):new("GateCommand")
 local subcommands = {}
 
 -- Load submodules
-subcommands.list = include("gate/list.lua")
-subcommands.admin = include("gate/admin.lua")
-subcommands.config = include("gate/config.lua")
-subcommands.help = include("gate/help.lua")
+subcommands.list = include("gate/list")
+subcommands.admin = include("gate/admin")
+subcommands.config = include("gate/config")
+subcommands.help = include("gate/help")
 
 -- Load and map actions
-local actions = include("gate/actions.lua")
+local actions = include("gate/actions")
 subcommands.create = actions.create
+subcommands.cost = actions.cost
 subcommands.info = actions.info
 subcommands.toggle = actions.toggle
 subcommands.destroy = actions.destroy
@@ -58,7 +61,7 @@ function execute(playerIndex, commandName, ...)
         end
     else
         -- Unknown subcommand - show help
-        return 0, "", string.format("Unknown command: %s. Use '/gate help' for available commands.", subcommand)
+        return 0, "", string.format("[Unknown command]: %s. Use '/gate help' for available commands.", subcommand)
     end
 end
 
@@ -67,7 +70,7 @@ end
 -- ============================================================================
 
 function getDescription()
-    return "Gate management commands - create, list, manage gates"
+    return "Gate management commands - create, cost, info, list, toggle, destroy"
 end
 
 function getHelp()

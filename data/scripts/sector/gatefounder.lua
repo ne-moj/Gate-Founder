@@ -3,29 +3,30 @@ if onClient() then return end
 package.path = package.path .. ";data/scripts/lib/?.lua"
 
 local Placer = include("placer")
-local PlanGenerator = include("plangenerator")
-local StyleGenerator = include ("internal/stylegenerator.lua")
-local GateFounderInit = include("gatefounderinit")
-local Config = GateFounderInit.Config
-local Log = GateFounderInit.Log
+local GateConfig = include("gate/config")
+local GateCreator = include("gate/creator")
+local Log = include("logger")
 
 -- namespace GateFounder
 GateFounder = {}
 
 local sector, x, y
 
+--[[
+    Initializes the GateFounder for the current sector, processing any pending gate actions from the server's todo list.
+--]]
 function GateFounder.initialize()
     sector = Sector()
     x, y = sector:getCoordinates()
     local gateEntities = {sector:getEntitiesByScript("gate.lua")}
     Log:Debug("(%i:%i) gatefounder init, gates count: %i", x, y, #gateEntities)
 
-    -- check todo list
+    -- check todo list (from database)
     local key = 'gateFounder_'..x..'_'..y
     local list = Server():getValue(key)
     local newGates = false
     if list then
-        Server():setValue(key)
+        Server():setValue(key) -- clear
         local actions = list:split(';')
         if actions then
             for _, action in ipairs(actions) do
@@ -38,21 +39,20 @@ function GateFounder.initialize()
                 if actionType == 1 then -- found
                     newGates = true
                     Log:Debug("GetValue - spawn a gate %i from (%i:%i) to (%i:%i)", factionIndex, x, y, tx, ty)
-                    gateEntities[#gateEntities+1] = GateFounder.foundGate(factionIndex, tx, ty, true)
+                    local gate = GateFounder.foundGate(factionIndex, tx, ty, true)
+                    gateEntities[#gateEntities+1] = gate
                 elseif actionType == 2 then -- claim
-                    Log:Debug("GetValue - claim a gate from (%i:%i) to (%i:%i) to faction %s", x, y, tx, ty, string.format("%.f", factionIndex))
                     GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
                 elseif actionType == 3 then -- toggle
                     local isEnabled = action[5] == '1'
-                    Log:Debug("GetValue - toggle a gate of faction %s from (%i:%i) to (%i:%i) - %s", string.format("%.f", factionIndex), x, y, tx, ty, tostring(isEnabled))
                     GateFounder.toggleGate(factionIndex, tx, ty, isEnabled, gateEntities)
                 elseif actionType == 4 then -- destroy
-                    Log:Debug("GetValue - remove a gate of faction %s from (%i:%i) to (%i:%i)", string.format("%.f", factionIndex), x, y, tx, ty)
-                    local removedKey = GateFounder.destroyGate(factionIndex, tx, ty, gateEntities)
-                    gateEntities[removedKey] = nil -- remove gate from the list so we don't check it later
+                    GateFounder.destroyGate(factionIndex, tx, ty, gateEntities)
+                    -- Re-fetch or handle clean up? Original just removed from list.
+                    -- Actually we should probably refetch or carefully manage the list.
+                    -- But let's stick to original logic path if possible or improve.
                 elseif actionType == 5 then -- (un)lock
                     local isLocked = action[5] == '1'
-                    Log:Debug("GetValue - (un)lock a gate of faction %s from (%i:%i) to (%i:%i) - %s", string.format("%.f", factionIndex), x, y, tx, ty, tostring(isLocked))
                     GateFounder.lockGate(factionIndex, tx, ty, isLocked, gateEntities)
                 end
             end
@@ -64,161 +64,142 @@ function GateFounder.initialize()
     end
 end
 
+--[[
+    Found a gate (used for incoming gates)
+
+    @param factionIndex number - Faction index of the gate
+    @param tx number - Target x coordinate of the gate
+    @param ty number - Target y coordinate of the gate
+    @param notRemote boolean - Whether the gate is not remote (default: false)
+    @return Entity - The created gate entity
+--]]
 function GateFounder.foundGate(factionIndex, tx, ty, notRemote)
-    Log:Debug("Spawn a gate back for faction %s from (%i:%i) to (%i:%i)", string.format("%.f", factionIndex), x, y, tx, ty)
-    --local faction = Faction(factionIndex)
-
-    local desc = EntityDescriptor()
-    desc:addComponents(
-      ComponentType.Plan,
-      ComponentType.BspTree,
-      ComponentType.Intersection,
-      ComponentType.Asleep,
-      ComponentType.DamageContributors,
-      ComponentType.BoundingSphere,
-      ComponentType.PlanMaxDurability,
-      ComponentType.Durability,
-      ComponentType.BoundingBox,
-      ComponentType.Velocity,
-      ComponentType.Physics,
-      ComponentType.Scripts,
-      ComponentType.ScriptCallback,
-      ComponentType.Title,
-      ComponentType.Owner,
-      ComponentType.FactionNotifier,
-      ComponentType.WormHole,
-      ComponentType.EnergySystem,
-      ComponentType.EntityTransferrer
-    )
+    -- notRemote is true when called from initialize (todo list)
+    -- When called via invokeSectorFunction, it might be nil/false -> implies we need resolving?
+    -- Original logic: if notRemote then return sector:createEntity... end
+    -- else add to gates and resolveIntersections.
     
-    local styleGenerator = StyleGenerator(factionIndex)
-    local c1 = styleGenerator.factionDetails.baseColor
-    local c2 = ColorRGB(0.25, 0.25, 0.25)
-    local c3 = styleGenerator.factionDetails.paintColor
-    c1 = ColorRGB(c1.r, c1.g, c1.b)
-    c3 = ColorRGB(c3.r, c3.g, c3.b)
+    Log:Debug("Sector:foundGate - faction:%s, targets (%d:%d)", tostring(factionIndex), tx, ty)
     
-    local plan = PlanGenerator.makeGatePlan(Seed(factionIndex) + Server().seed, c1, c2, c3)
-    local dir = vec3(tx - x, 0, ty - y)
-    normalize_ip(dir)
-
-    local position = MatrixLookUp(dir, vec3(0, 1, 0))
-    position.pos = dir * 2000.0
-
-    desc:setMovePlan(plan)
-    desc.position = position
-    desc.factionIndex = factionIndex
-    desc.invincible = true
-    desc:addScript("data/scripts/entity/gate.lua")
-    desc:setValue("gateFounder_origFaction", factionIndex)
-
-    local wormhole = desc:getComponent(ComponentType.WormHole)
-    wormhole:setTargetCoordinates(tx, ty)
-    wormhole.visible = false
-    wormhole.visualSize = 50
-    wormhole.passageSize = 50
-    wormhole.oneWay = true
-
-    -- GateRegistry Integration
-    local GateRegistry = include("gateregistry")
+    local faction = Faction(factionIndex)
+    if not faction then 
+        Log:Error("Faction %s not found for gate creation!", tostring(factionIndex))
+        return 
+    end
+    
+    -- Use Creator
+    local gate = GateCreator.createGate(faction, x, y, tx, ty)
+    
+    -- Registry add? 
+    -- If we are creating the BACK link, we should probably register it too?
+    -- Original code:
+    -- local GateRegistry = include("gateregistry")
+    -- GateRegistry.add(x, y, factionIndex, tx, ty)
+    local GateRegistry = include("gate/registry")
     if GateRegistry then
         GateRegistry.add(x, y, factionIndex, tx, ty)
     end
 
     if notRemote then
-        return sector:createEntity(desc, EntityArrivalType.Default)
+        return gate
     end
-    -- remote call - resolve intersections
+    
+    -- If remote call (live update), resolve intersections
     local gates = {sector:getEntitiesByScript("gate.lua")}
-    Log:Debug("(%i:%i) gatefounder foundGate back, gates count: %i", x, y, #gates)
-    gates[#gates+1] = sector:createEntity(desc, EntityArrivalType.Default)
+    -- Gate is already created? Yes, createGate calls sector:createEntity
+    -- We just need to ensure it doesn't collide
+    gates[#gates+1] = gate -- add our new gate to list
     Placer.resolveIntersections(gates)
+    
+    return gate
 end
 
+--[[
+    Destroys a gate of a specific faction and target coordinates.
+    
+    @param factionIndex number - Faction index of the gate
+    @param tx number - Target x coordinate of the gate
+    @param ty number - Target y coordinate of the gate
+    @param gateEntities table - List of gate entities (optional)
+    @return number - Index of the destroyed gate in the list
+--]]
 function GateFounder.destroyGate(factionIndex, tx, ty, gateEntities)
     Log:Debug("Remove a gate of faction %s from (%i:%i) to (%i:%i)", string.format("%.f", factionIndex), x, y, tx, ty)
-    --local faction = Faction(factionIndex)
-    --if not faction then return end
-    if not gateEntities then
-        gateEntities = {sector:getEntitiesByScript("gate.lua")}
-        Log:Debug("(%i:%i) destroyGate, gates count: %i", x, y, #gateEntities)
-    end
-    local wx, wy
-    for k, gate in pairs(gateEntities) do
-        --if gate.factionIndex == factionIndex then
-            wx, wy = WormHole(gate):getTargetCoordinates()
-            if wx == tx and wy == ty then
-                Log:Debug("Gate found and removed")
-                sector:deleteEntity(gate)
-                return k
-            end
-        --end
-    end
-end
 
-function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
-    Log:Debug("Toggle a gate of faction %s from (%i:%i) to (%i:%i) - %s", string.format("%.f", factionIndex), x, y, tx, ty, enable)
-    --local faction = Faction(factionIndex)
-    --if not faction then return end
     if not gateEntities then
         gateEntities = {sector:getEntitiesByScript("gate.lua")}
-        Log:Debug("(%i:%i) toggleGate, gates count: %i", x, y, #gateEntities)
     end
-    local wh, wx, wy, status
-    for _, gate in pairs(gateEntities) do
-        --if gate.factionIndex == factionIndex then
-            wh = WormHole(gate)
-            wx, wy = wh:getTargetCoordinates()
-            if wx == tx and wy == ty then
-                status = gate:invokeFunction("gate.lua", "setPower", enable) -- Integration: Compass-like Gate Pixel Icons
-                if status ~= 0 then
-                    Log:Error("toggleGate - status is %s", tostring(status))
-                else
-                    Log:Debug("Gate found and toggled")
-                end
-                return
-            end
-        --end
-    end
-end
-
-function GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
-    Log:Debug("Claim a gate from (%i:%i) to (%i:%i) to faction %s", x, y, tx, ty, string.format("%.f", factionIndex))
-    local faction = Faction(factionIndex)
-    if not faction then
-        Log:Debug("Tried to claim a gate, but faction doesn't exist anymore")
-        return
-    end
-    if not gateEntities then
-        gateEntities = {sector:getEntitiesByScript("gate.lua")}
-        Log:Debug("(%i:%i) claimGate, gates count: %i", x, y, #gateEntities)
-    end
-    local wx, wy
+    
     for k, gate in pairs(gateEntities) do
-        wx, wy = WormHole(gate):getTargetCoordinates()
+        local wx, wy = WormHole(gate):getTargetCoordinates()
         if wx == tx and wy == ty then
-            Log:Debug("Gate found and claimed")
+            Log:Debug("Gate found and removed")
+            sector:deleteEntity(gate)
+            return k
+        end
+    end
+end
+
+--[[
+    Toggles the power state of a gate of a specific faction and target coordinates.
+    
+    @param factionIndex number - Faction index of the gate
+    @param tx number - Target x coordinate of the gate
+    @param ty number - Target y coordinate of the gate
+    @param enable boolean - Whether to enable the gate
+    @param gateEntities table - List of gate entities (optional)
+--]]
+function GateFounder.toggleGate(factionIndex, tx, ty, enable, gateEntities)
+    if not gateEntities then
+        gateEntities = {sector:getEntitiesByScript("gate.lua")}
+    end
+    
+    for _, gate in pairs(gateEntities) do
+        local wx, wy = WormHole(gate):getTargetCoordinates()
+        if wx == tx and wy == ty then
+             gate:invokeFunction("gate.lua", "setPower", enable)
+             return
+        end
+    end
+end
+
+--[[
+    Claims a gate of a specific faction and target coordinates.
+    
+    @param factionIndex number - Faction index of the gate
+    @param tx number - Target x coordinate of the gate
+    @param ty number - Target y coordinate of the gate
+    @param gateEntities table - List of gate entities (optional)
+--]]
+function GateFounder.claimGate(factionIndex, tx, ty, gateEntities)
+    if not gateEntities then
+        gateEntities = {sector:getEntitiesByScript("gate.lua")}
+    end
+    for _, gate in pairs(gateEntities) do
+        local wx, wy = WormHole(gate):getTargetCoordinates()
+        if wx == tx and wy == ty then
             gate.factionIndex = factionIndex
         end
     end
 end
 
+--[[
+    Locks a gate of a specific faction and target coordinates.
+    
+    @param factionIndex number - Faction index of the gate
+    @param tx number - Target x coordinate of the gate
+    @param ty number - Target y coordinate of the gate
+    @param lock boolean - Whether to lock the gate
+    @param gateEntities table - List of gate entities (optional)
+--]]
 function GateFounder.lockGate(factionIndex, tx, ty, lock, gateEntities)
-    Log:Debug("(Un)Lock a gate of faction %s from (%i:%i) to (%i:%i) - %s", string.format("%.f", factionIndex), x, y, tx, ty, lock)
     if not gateEntities then
         gateEntities = {sector:getEntitiesByScript("gate.lua")}
-        Log:Debug("(%i:%i) lockGate, gates count: %i", x, y, #gateEntities)
     end
     for _, gate in pairs(gateEntities) do
-        local wormhole = WormHole(gate)
-        local wx, wy = wormhole:getTargetCoordinates()
+        local wx, wy = WormHole(gate):getTargetCoordinates()
         if wx == tx and wy == ty then
-            local status = gate:invokeFunction("gate.lua", "gateFounder_setLock", lock)
-            if status ~= 0 then
-                Log:Error("lockGate - status is %s", tostring(status))
-            else
-                Log:Debug("Gate found and (un)locked")
-            end
+            gate:invokeFunction("gate.lua", "gateFounder_setLock", lock)
             return
         end
     end

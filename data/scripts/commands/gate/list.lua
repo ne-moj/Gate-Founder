@@ -1,6 +1,8 @@
+if onClient() then return end
+
 package.path = package.path .. ";data/scripts/lib/?.lua"
 
-local GateRegistry = include("gateregistry")
+local GateRegistry = include("gate/registry")
 
 local function list(playerIndex, args)
     local player = Player(playerIndex)
@@ -12,7 +14,16 @@ local function list(playerIndex, args)
     
     -- Argument Parsing
     for i, arg in ipairs(args) do
-        if arg == "--nearest" then
+        if arg == "help" or arg == "?" then
+            return 0, "", [[
+Usage: /gate list [options]
+
+Options:
+  --nearest           : Sort gates by distance to current sector.
+  --radius <dist>     : Show gates within <dist> sectors.
+  --sector            : Show only gates in the current sector.
+            ]]
+        elseif arg == "--nearest" then
             showNearest = true
         elseif arg == "--sector" then
             showCurrentSector = true
@@ -36,18 +47,28 @@ local function list(playerIndex, args)
             if g.owner == player.index then table.insert(owned, g) end
         end
         gates = owned
-        header = string.format("**Your Gates in Sector (%d, %d):**\n", x, y)
+        header = string.format("[Your Gates in Sector (%d, %d)]:\n", x, y)
     elseif showNearest or filterRadius then
-        -- Default radius if not specified but --nearest used, or infinite if just sorting?
-        -- If filterRadius is set, we use it. If not, default to 50 for nearest? 
-        -- Let's say --nearest implies a sort. --radius implies a filter.
-        -- GateRegistry.getNearest handles both sort and filter.
-        gates = GateRegistry.getNearest(x, y, 10, player.index, filterRadius)
-        header = string.format("**Your Nearest Gates to (%d, %d):**\n", x, y)
+        -- Default radius to infinite if not specified (just sorting by distance)
+        -- GateRegistry.getNearest(x, y, count, ownerIndex, maxDist)
+        gates = GateRegistry.getNearest(x, y, 20, player.index, filterRadius)
+        
+        if showNearest then
+            header = string.format("[Your Nearest Gates to (%d, %d)]:\n", x, y)
+        else
+            header = string.format("[Your Gates within %s radius of (%d, %d)]:\n", tostring(filterRadius), x, y)
+        end
     else
         -- List ALL user gates
         gates = GateRegistry.getByOwner(player.index)
-        header = string.format("**All Your Gates:**\n")
+        -- Sort by creation time (default usually) or explicit sort?
+        -- Let's sort all lists by distance from current sector simply for better UX
+        table.sort(gates, function(a, b) 
+            local da = (a.x - x)^2 + (a.y - y)^2
+            local db = (b.x - x)^2 + (b.y - y)^2
+            return da < db 
+        end)
+        header = string.format("[All Your Gates (Sorted by Distance)]:\n")
     end
     
     if #gates == 0 then
@@ -55,7 +76,11 @@ local function list(playerIndex, args)
     end
     
     local msg = header
-    for _, gate in ipairs(gates) do
+    for _, item in ipairs(gates) do
+        -- Handle both raw gate objects and {gate=g, distSq=d} wrappers from getNearest
+        local gate = item
+        if item.gate then gate = item.gate end
+        
         local dist = math.sqrt((gate.x - x)^2 + (gate.y - y)^2)
         local status = gate.status or "active"
         local fee = gate.baseFee or 0 -- Placeholder if we add fees later

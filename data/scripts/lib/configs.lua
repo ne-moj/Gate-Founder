@@ -70,7 +70,16 @@ local TableShow = include('tableshow')
 
 local Configs = {}
 
--- Custom __index to allow Config.FieldName syntax
+--[[
+    @brief Custom __index metamethod for the Configs class.
+    
+    This function allows accessing configuration values directly as properties of the Configs instance,
+    e.g., `config.MaxDistance`. It first checks for class methods and then for values in the
+    internal `_data` table.
+    @param self The Configs instance.
+    @param key The key (field name) being accessed.
+    @return The value associated with the key, or nil if not found.
+]]--
 Configs.__index = function(self, key)
     -- First check class methods
     if Configs[key] then
@@ -85,7 +94,16 @@ Configs.__index = function(self, key)
     return nil
 end
 
--- Custom __newindex to allow Config.FieldName = value syntax
+--[[
+    @brief Custom __newindex to allow Config.FieldName = value syntax
+    
+    This function allows setting configuration values directly as properties of the Configs instance,
+    e.g., `config.MaxDistance = 100`. It first checks for special internal fields and then sets the
+    value in the internal `_data` table after validating it.
+    @param self The Configs instance.
+    @param key The key (field name) being set.
+    @param value The value to set.
+]]--
 Configs.__newindex = function(self, key, value)
     -- Special internal fields
     if key:sub(1, 1) == "_" or key == "moduleName" or key == "baseDir" or 
@@ -107,8 +125,20 @@ Configs.__newindex = function(self, key, value)
     end
 end
 
--- Type validators
+--[[
+    @brief Type validators
+    
+    This function list validates a configuration value based on the rules defined in the schema.
+]]--
 local validators = {
+--[[
+    @brief Validates a number value
+    
+    This function validates a configuration value based on the rules defined in the schema.
+    @param value The value to validate.
+    @param rules The validation rules for the value.
+    @return A tuple (boolean, string) where the boolean indicates success and the string is an error message if validation fails.
+]]--
     number = function(value, rules)
         if type(value) ~= "number" then
             return false, "Expected number, got " .. type(value)
@@ -122,6 +152,14 @@ local validators = {
         return true
     end,
     
+--[[
+    @brief Validates a string value
+    
+    This function validates a configuration value based on the rules defined in the schema.
+    @param value The value to validate.
+    @param rules The validation rules for the value.
+    @return A tuple (boolean, string) where the boolean indicates success and the string is an error message if validation fails.
+]]--
     string = function(value, rules)
         if type(value) ~= "string" then
             return false, "Expected string, got " .. type(value)
@@ -145,13 +183,29 @@ local validators = {
         return true
     end,
     
+--[[
+    @brief Validates a boolean value
+    
+    This function validates a configuration value based on the rules defined in the schema.
+    @param value The value to validate.
+    @param rules The validation rules for the value.
+    @return A tuple (boolean, string) where the boolean indicates success and the string is an error message if validation fails.
+]]--
     boolean = function(value, rules)
         if type(value) ~= "boolean" then
             return false, "Expected boolean, got " .. type(value)
         end
         return true
     end,
+
+--[[
+    @brief Validates a table value
     
+    This function validates a configuration value based on the rules defined in the schema.
+    @param value The value to validate.
+    @param rules The validation rules for the value.
+    @return A tuple (boolean, string) where the boolean indicates success and the string is an error message if validation fails.
+]]--
     table = function(value, rules)
         if type(value) ~= "table" then
             return false, "Expected table, got " .. type(value)
@@ -425,24 +479,26 @@ function Configs:save()
     output = output .. "configs = {\n"
     
     for key, value in pairs(self._data) do
-        local comment = self._comments[key]
-        if comment then
-            output = output .. "    -- " .. comment .. "\n"
+        if type(value) ~= "function" then
+            -- Format value based on type
+            local formattedValue
+            if type(value) == "string" then
+                formattedValue = string.format("%q", value)
+            elseif type(value) == "boolean" then
+                formattedValue = tostring(value)
+            elseif type(value) == "table" then
+                formattedValue = TableShow(value, nil, "    ")
+            else
+                formattedValue = tostring(value)
+            end
+
+            local comment = self._comments[key]
+            if comment ~= nil then
+                output = output .. "    -- " .. comment .. "\n"
+            end
+            
+            output = output .. string.format("    %s = %s,\n", key, formattedValue)
         end
-        
-        -- Format value based on type
-        local formattedValue
-        if type(value) == "string" then
-            formattedValue = string.format("%q", value)
-        elseif type(value) == "boolean" then
-            formattedValue = tostring(value)
-        elseif type(value) == "table" then
-            formattedValue = TableShow(value, nil, "    ")
-        else
-            formattedValue = tostring(value)
-        end
-        
-        output = output .. string.format("    %s = %s,\n", key, formattedValue)
     end
     
     output = output .. "}\n"

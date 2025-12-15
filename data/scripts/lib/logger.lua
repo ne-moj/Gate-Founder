@@ -1,5 +1,3 @@
-package.path = package.path .. ";data/scripts/lib/?.lua"
-
 --[[
     Logger Library
     Author: Sergey Krasovsky, Antigravity
@@ -53,7 +51,9 @@ package.path = package.path .. ";data/scripts/lib/?.lua"
             bit32.band(0x3, ERROR) = 0x1 > 0  -- TRUE, ERROR enabled
             bit32.band(0x3, DEBUG) = 0x0 = 0  -- FALSE, DEBUG disabled
 --]]
+package.path = package.path .. ";data/scripts/lib/?.lua"
 
+local GateConfig = include("gate/config")
 local TableShow = include ('tableshow')
 local Logger = {
     enumTypes = {
@@ -82,10 +82,21 @@ function Logger:new(moduleName)
     self.__index = self
     self.moduleName = moduleName or "Unknown"
 	
-    --self.printMask = self:_prepareMask({'ERROR', 'WARNING', 'INFO'})
-    self.printMask = self:_prepareMask({'ERROR', 'WARNING', 'INFO', 'DEBUG'})
-    --self:setSaveMask({'ERROR', 'WARNING'})
-    self.saveMask = self:_prepareMask({'ERROR', 'WARNING', 'INFO', 'DEBUG'})
+    local logLevel = GateConfig:get("LogLevel") or 4
+    local fileLogLevel = GateConfig:get("FileLogLevel") or 4
+
+    -- Map log levels
+    local levelMasks = {
+        [0] = {},
+        [1] = {'ERROR'},
+        [2] = {'ERROR', 'WARNING'},
+        [3] = {'ERROR', 'WARNING', 'INFO'},
+        [4] = {'ERROR', 'WARNING', 'INFO', 'DEBUG'},
+        [5] = {'ERROR', 'WARNING', 'INFO', 'DEBUG', 'FUN_RUN'}
+    }
+
+    self.printMask = self:_prepareMask(levelMasks[logLevel] or levelMasks[logLevel])
+    self.saveMask = self:_prepareMask(levelMasks[fileLogLevel] or levelMasks[fileLogLevel])
     
     return instance
 end

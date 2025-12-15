@@ -33,8 +33,8 @@ package.path = package.path .. ";data/scripts/lib/?.lua"
         nextElement:updatePosition(positions.bottomLeft, nil)
     
     COORDINATE SYSTEM:
-        - topLeft = (x_min, y_min)
-        - bottomRight = (x_max, y_max)
+        - topLeft = vec2(x_min, y_min)
+        - bottomRight = vec2(x_max, y_max)
         - Padding is added INSIDE the element bounds
         
     EXAMPLE - Vertical stacking:
@@ -138,6 +138,12 @@ function UI:updatePosition (topLeft, bottomRight)
 	self:calcPosition()
 end
 
+--[[
+    Calculates the position of the UI element.
+    
+    If either `topLeft` or `bottomRight` is missing, it calculates the missing corner
+    based on the element's `width`, `height`, and `padding`.
+--]]
 function UI:calcPosition ()
 	if self.height and self.width then
 		if self.position.topLeft == nil and self.position.bottomRight ~= nil then
@@ -148,6 +154,12 @@ function UI:calcPosition ()
 	end
 end
 
+--[[
+    Calculates the size of the UI element.
+    
+    If both `topLeft` and `bottomRight` are provided, it calculates the width and height
+    based on the positions and padding.
+--]]
 function UI:calcSize ()
 	if self.position.topLeft and self.position.bottomRight then
 		self.width = self.position.bottomRight.x - self.position.topLeft.x - (self.padding.top + self.padding.bottom)
@@ -322,19 +334,40 @@ function UI:getRects(rect, ratios, padding, spacing, isVertical)
     return rects
 end
 
+--[[
+    Splits a Rect horizontally into multiple Rects based on given ratios.
+    
+    @param rect Rect - Area to split
+    @param ratios table - Ratios for each split (sum should be 1)
+    @param padding number|table - Padding in pixels
+    @param spacing number - Spacing between splits
+    @return table - table of Rects
+--]]
 function UI:horizontalSplit(rect, ratios, padding, spacing)
     return self:getRects(rect, ratios, padding, spacing, false)
 end
 
+--[[
+    Splits a Rect vertically into multiple Rects based on given ratios.
+    
+    @param rect Rect - Area to split
+    @param ratios table - Ratios for each split (sum should be 1)
+    @param padding number|table - Padding in pixels
+    @param spacing number - Spacing between splits
+    @return table - table of Rects
+--]]
 function UI:verticalSplit(rect, ratios, padding, spacing)
     return self:getRects(rect, ratios, padding, spacing, true)
 end
 
 --[[
     Create a Grid of Rects
+    
     @param rect Rect - Area to fill
     @param rows number - Number of rows
     @param cols number - Number of cols
+    @param padding number|table - Padding in pixels
+    @param spacing number - Spacing between splits
     @return table - table of Rects (row-major: [row][col])
 --]]
 function UI:grid(rect, rows, cols, padding, spacing)

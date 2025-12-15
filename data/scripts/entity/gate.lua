@@ -1,10 +1,15 @@
-local Azimuth, GateFounderConfig, GateFounderLog, gateFounder_isLocked -- server
+package.path = package.path .. ";data/scripts/lib/?.lua"
+
+local gateFounder_isLocked -- server
 local gateFounder_canTransfer, gateFounder_secure, gateFounder_restore -- extended server functions
 local gateFounder_interactionPossible, gateFounder_initUI -- extended client functions
 
 
 if onClient() then
+    -- override functions
 	gateFounder_interactionPossible = Gate.interactionPossible
+	gateFounder_initUI = Gate.initUI
+
 	function Gate.interactionPossible(playerIndex, option)
 		if option == 0 then
 			return true
@@ -18,7 +23,6 @@ if onClient() then
 		return true
 	end
 
-	gateFounder_initUI = Gate.initUI
 	function Gate.initUI(...)
 		if gateFounder_initUI then gateFounder_initUI(...) end
 
@@ -37,11 +41,14 @@ if onClient() then
 
 
 else -- onServer
-	local GateFounderInit = include("gatefounderinit")
-	local GateFounderConfig = GateFounderInit.Config
-	local GateFounderLog = GateFounderInit.Log
-
+    -- override functions
 	gateFounder_canTransfer = Gate.canTransfer
+	gateFounder_secure = Gate.secure
+	gateFounder_restore = Gate.restore
+
+	local GateFounderConfig = include("gate/config")
+	local GateFounderLog = include("logger"):new("GateFounder")
+
 	function Gate.canTransfer(index)
 		if not Gate.getPower() then -- don't allow to pass if gate is toggled off
 			return false
@@ -109,7 +116,6 @@ else -- onServer
 		end
 	end
 
-	gateFounder_secure = Gate.secure
 	function Gate.secure()
 		local data = {}
 		if gateFounder_secure then
@@ -119,7 +125,6 @@ else -- onServer
 		return data
 	end
 
-	gateFounder_restore = Gate.restore
 	function Gate.restore(data)
 		gateFounder_isLocked = data.locked
 		if gateFounder_restore then
@@ -134,7 +139,14 @@ else -- onServer
 
 end
 
-
+--[[
+    Displays the gate management dialog to the player.
+    This function handles both client-side initiation (requesting admin status from server)
+    and server-side response (displaying the dialog based on permissions).
+    @param entityIndex The index of the entity (gate).
+    @param isAdmin Boolean indicating if the player has admin rights.
+    @param isLocked Boolean indicating if the gate is locked by an admin.
+--]]
 function Gate.gateFounder_showManageDialog(entityIndex, isAdmin, isLocked)
     if onClient() then
         if isAdmin == nil then -- get player admin rights and gate lock
@@ -189,6 +201,14 @@ function Gate.gateFounder_showManageDialog(entityIndex, isAdmin, isLocked)
 end
 callable(Gate, "gateFounder_showManageDialog")
 
+--[[
+    Toggles the gate on or off.
+    This function handles both client-side initiation (requesting admin status from server)
+    and server-side response (displaying the dialog based on permissions).
+    @param entityIndex The index of the entity (gate).
+    @param isAdmin Boolean indicating if the player has admin rights.
+    @param isLocked Boolean indicating if the gate is locked by an admin.
+--]]
 function Gate.gateFounder_onToggle()
     if onClient() then
         invokeServerFunction("gateFounder_onToggle")
@@ -234,6 +254,14 @@ function Gate.gateFounder_onToggle()
 end
 callable(Gate, "gateFounder_onToggle")
 
+--[[
+    Destroys the gate.
+    This function handles both client-side initiation (requesting admin status from server)
+    and server-side response (displaying the dialog based on permissions).
+    @param entityIndex The index of the entity (gate).
+    @param isAdmin Boolean indicating if the player has admin rights.
+    @param isLocked Boolean indicating if the gate is locked by an admin.
+--]]
 function Gate.gateFounder_onDestroy()
     if onClient() then
         invokeServerFunction("gateFounder_onDestroy")
@@ -306,6 +334,14 @@ function Gate.gateFounder_onDestroy()
 end
 callable(Gate, "gateFounder_onDestroy")
 
+--[[
+    Locks or unlocks the gate.
+    This function handles both client-side initiation (requesting admin status from server)
+    and server-side response (displaying the dialog based on permissions).
+    @param entityIndex The index of the entity (gate).
+    @param isAdmin Boolean indicating if the player has admin rights.
+    @param isLocked Boolean indicating if the gate is locked by an admin.
+--]]
 function Gate.gateFounder_onLock()
     if onClient() then
         invokeServerFunction("gateFounder_onLock")

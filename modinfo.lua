@@ -42,8 +42,6 @@ meta = {
 	--      {id = "OptionalMod", min = "0.2", optional = true}, -- we support OptionalMod optionally, starting at version 0.2
 	-- },
 	dependencies = {
-		{ id = "1722652757", min = "1.4" },
-		{ id = "1722261398", min = "1.2.1" },
 		{ id = "Avorion", min = "1.0", max = "2.*" },
 	},
 

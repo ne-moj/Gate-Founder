@@ -45,7 +45,7 @@ local ColorGradient = include("colorgradient")
     Return: function (value) {...}
     
     Example:
-        local gradient = ClosureColorsByDistantion({"red", "yellow", "green"}, 0, 100)
+        local gradient = ClosureColors.byDistance({"red", "yellow", "green"}, 0, 100)
         local color = gradient(50)  -- Returns ColorRGB for middle value
 --]]
 
@@ -58,7 +58,9 @@ local ColorGradient = include("colorgradient")
     @param offIntermediateColor boolean - Skip intermediate colors
     @return function - Gradient function(value) or nil on error
 --]]
-function ClosureColorsByDistantion(colors, minValue, maxValue, offIntermediateColor)
+local ClosureColors = {}
+
+function ClosureColors.byDistance(colors, minValue, maxValue, offIntermediateColor)
     -- Wrapper around new ColorGradient module
     return ColorGradient.createGradient(colors, minValue, maxValue, {
         offIntermediateColor = offIntermediateColor
@@ -66,4 +68,4 @@ function ClosureColorsByDistantion(colors, minValue, maxValue, offIntermediateCo
 end
 
 -- Return the function for backward compatibility
-return ClosureColorsByDistantion
+return ClosureColors

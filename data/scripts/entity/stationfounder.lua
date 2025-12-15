@@ -1,4 +1,9 @@
-local Azimuth, GateFounderConfig -- client/server
+-- TODO: refactor this file
+if true then return nil end
+
+package.path = package.path .. ";data/scripts/lib/?.lua"    
+
+local GateFounderConfig -- client/server
 local gateFounder_window, gateFounder_xBox, gateFounder_yBox, gateFounder_coordsLabel, gateFounder_distanceLabel, gateFounder_maxDistanceLabel, gateFounder_priceLabel, gateFounder_foundGateBtn, gateFounder_stationButtons -- UI
 local PassageMap, gateFounder_x, gateFounder_y, gateFounder_passageMap -- client
 local gateFounder_sendStationStyle, gateFounder_foundStation -- extended server functions
@@ -214,8 +219,7 @@ if onClient() then
 
 else -- onServer
 
-    local GateFounderInit = include("gatefounderinit")
-    local GateFounderConfig = GateFounderInit.Config
+    local GateFounderConfig = include("gate/config")
 
     -- CALLABLE --
 
@@ -264,17 +268,24 @@ else -- onServer
     end
     callable(StationFounder, "gateFounder_sendSettings")
 
+    local GateService = include("gate/service")
+    
     function StationFounder.gateFounder_foundGate(tx, ty)
         if getScriptPath() ~= "data/scripts/entity/stationfounder.lua" then return end
 
         local buyer, _, player = getInteractingFaction(callingPlayer, AlliancePrivilege.FoundStations)
         if not buyer then return end
     
-        local status, success = player:invokeFunction("gatefounder.lua", "found", tx, ty, "confirm")
-        if status ~= 0 then
-            player:sendChatMessage("", 1, "GateFounder: An error has occured, status: " .. status)
+        -- Use GateService.found directly
+        -- GateService.found(playerIndex, tx, ty, confirm, otherFaction, isCommand)
+        -- We want execution, so we pass "confirm"
+        local success, msg = GateService.found(player.index, tx, ty, "confirm", nil, false)
+        
+        if not success then
+            player:sendChatMessage("GateFounder", 1, msg or "Unspecified error")
             return
         end
+        
         if success then -- remove ship
             player.craftIndex = Uuid()
             local ship = Entity()

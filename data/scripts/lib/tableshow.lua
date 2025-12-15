@@ -3,8 +3,8 @@
    Date:   January 12, 2007
    (For Lua 5.1)
    
-   Editor:    Sergey Krasovsky
-   Date:      December 10, 2024
+   Editor:    Sergey Krasovsky, Antigravity
+   Date:      December 2024
    ChangeLog:
    - Added key sort
    - Added nil type, nil is displayed as nil (previously displayed as 'nil')
